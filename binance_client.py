@@ -223,12 +223,20 @@ class BinanceClient:
             return {}
 
     def get_usdt_balance(self):
-        """جلب رصيد USDT الحر"""
+        """جلب رصيد USDT الحر - مع تشخيص للـ IP"""
         try:
             balance = self.exchange.fetch_balance()
             return float(balance.get("free", {}).get("USDT", 0))
-        except ccxt.BaseError as e:
-            logger.error(f"خطأ في جلب رصيد USDT: {e}")
+        except Exception as e:
+            # استخراج الـ IP العام للتشخيص
+            public_ip = "غير معروف"
+            try:
+                import urllib.request
+                public_ip = urllib.request.urlopen("https://api.ipify.org", timeout=5).read().decode("utf-8")
+            except: pass
+            
+            logger.error(f"❌ فشل جلب الرصيد! الـ IP الخاص بالبوت هو: {public_ip}")
+            logger.error(f"⚠️ سبب الرفض من بينانس: {e}")
             return 0.0
 
     # ──────────────── تنفيذ الأوامر ────────────────
