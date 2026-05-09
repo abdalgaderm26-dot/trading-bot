@@ -21,6 +21,17 @@ class BinanceClient:
         exchange_class = ccxt.binanceusdm if getattr(Config, "ENABLE_FUTURES", False) else ccxt.binance
         default_type = "future" if getattr(Config, "ENABLE_FUTURES", False) else "spot"
         
+        # ═══ اتصال عام (بدون API Key) لجلب البيانات - لا يحتاج IP Whitelist ═══
+        public_class = ccxt.binanceusdm if getattr(Config, "ENABLE_FUTURES", False) else ccxt.binance
+        self.public = public_class({
+            "enableRateLimit": True,
+            "options": {
+                "defaultType": default_type,
+                "adjustForTimeDifference": True
+            }
+        })
+        
+        # ═══ اتصال خاص (مع API Key) للتداول والرصيد فقط ═══
         self.exchange = exchange_class({
             "apiKey": Config.BINANCE_API_KEY,
             "secret": Config.BINANCE_API_SECRET,
@@ -34,6 +45,7 @@ class BinanceClient:
         
         if Config.BINANCE_SANDBOX:
             self.exchange.set_sandbox_mode(True)
+            self.public.set_sandbox_mode(True)
             logger.info("🧪 وضع الاختبار (Sandbox) مفعّل")
             
         if getattr(Config, "ENABLE_FUTURES", False):
@@ -154,11 +166,11 @@ class BinanceClient:
 
     # ──────────────── جلب البيانات ────────────────
     def fetch_ohlcv(self, symbol=None, timeframe=None, limit=500):
-        """جلب بيانات الشموع (OHLCV)"""
+        """جلب بيانات الشموع (OHLCV) - يستخدم اتصال عام بدون API Key"""
         symbol = symbol or Config.DEFAULT_PAIR
         timeframe = timeframe or Config.TIMEFRAME
         try:
-            ohlcv = self.exchange.fetch_ohlcv(
+            ohlcv = self.public.fetch_ohlcv(
                 symbol, timeframe, limit=limit
             )
             logger.debug(f"📊 تم جلب {len(ohlcv)} شمعة لـ {symbol}")
@@ -168,10 +180,10 @@ class BinanceClient:
             return []
 
     def fetch_ticker(self, symbol=None):
-        """جلب السعر الحالي"""
+        """جلب السعر الحالي - يستخدم اتصال عام بدون API Key"""
         symbol = symbol or Config.DEFAULT_PAIR
         try:
-            ticker = self.exchange.fetch_ticker(symbol)
+            ticker = self.public.fetch_ticker(symbol)
             return ticker
         except ccxt.BaseError as e:
             logger.error(f"خطأ في جلب السعر: {e}")
@@ -183,10 +195,10 @@ class BinanceClient:
         return float(ticker["last"]) if ticker else None
 
     def fetch_order_book(self, symbol=None, limit=20):
-        """جلب دفتر الأوامر"""
+        """جلب دفتر الأوامر - يستخدم اتصال عام بدون API Key"""
         symbol = symbol or Config.DEFAULT_PAIR
         try:
-            order_book = self.exchange.fetch_order_book(symbol, limit)
+            order_book = self.public.fetch_order_book(symbol, limit)
             return order_book
         except ccxt.BaseError as e:
             logger.error(f"خطأ في جلب دفتر الأوامر: {e}")
