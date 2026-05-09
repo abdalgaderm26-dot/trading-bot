@@ -270,10 +270,10 @@ class StrategyEngine:
 
         return round(buy_score), round(sell_score), details, pump_ctx
 
-    # ──────────────── اتخاذ القرار ────────────────
+    # ──────────────── اتخاذ القرار (عقل متداول 20 سنة خبرة) ────────────────
     def _make_decision(self, buy_score, sell_score, ai_score, pair,
                        analysis, details, regime, pump_ctx=None):
-        """اتخاذ قرار الشراء/البيع بناءً على النقاط"""
+        """اتخاذ قرار الشراء/البيع بناءً على النقاط + فلاتر احترافية"""
 
         pump_ctx = pump_ctx or {
             "is_pump": False,
@@ -292,23 +292,54 @@ class StrategyEngine:
 
         # ──── قرار الشراء ────
         if buy_score >= self.buy_threshold and ai_score >= self.min_ai_score:
-            # ✅ فلتر ضمان الربح: التحقق من التذبذب كافي لتغطية العمولة + ربح صافي
+
+            # ═══ فلتر 1: التحقق من التذبذب كافي لتغطية العمولة ═══
             if not self._profit_guarantee_filter(analysis, pair):
                 return self._hold_signal(pair, "ATR صغير - العملة راكدة لن تغطي العمولة")
+
+            # ═══ فلتر 2: التقاطع (Confluence) - قاعدة المحترف ═══
+            # المتداول المحترف لا يدخل إلا عندما تتفق 3+ مؤشرات مختلفة
+            confluence = self._count_confluence(analysis, ai_score, pump_ctx)
+            if confluence < 3:
+                logger.info(
+                    f"⏸️ {pair}: فلتر الاحتراف - تقاطع ضعيف ({confluence}/3 مؤشرات فقط)"
+                )
+                return self._hold_signal(pair, f"تقاطع ضعيف ({confluence}/3)")
+
+            # ═══ فلتر 3: لا تشتري في قمة RSI (خطأ المبتدئين) ═══
+            rsi = analysis.get("rsi", 50)
+            if rsi > 72:
+                logger.info(f"⏸️ {pair}: RSI مرتفع جداً ({rsi:.0f}) - خطر الشراء في القمة")
+                return self._hold_signal(pair, f"RSI مرتفع {rsi:.0f} - انتظار تراجع")
+
+            # ═══ فلتر 4: تباعد الحجم (Volume Divergence) ═══
+            # إذا السعر يرتفع لكن الحجم ينخفض = ارتفاع وهمي
+            vol = analysis.get("volume_analysis", {})
+            if pump_ctx.get("pct_3", 0) > 0.005 and vol.get("ratio", 1) < 0.8:
+                logger.info(f"⏸️ {pair}: تباعد حجم! السعر يرتفع لكن الحجم ضعيف = فخ")
+                return self._hold_signal(pair, "تباعد حجم - ارتفاع وهمي")
+
+            # ═══ فلتر 5: لا تشتري ضد اتجاه السوق العام ═══
+            if regime and regime.get("regime") == "TRENDING_DOWN" and regime.get("strength", 0) > 55:
+                logger.info(f"⏸️ {pair}: السوق هابط بقوة - لا تشتري ضد التيار")
+                return self._hold_signal(pair, "اتجاه هابط قوي")
+
+            # ═══ فلتر Pump Focus ═══
             is_fast_opportunity = bool(
                 pump_ctx.get("is_pump") or pump_ctx.get("is_steady")
             )
             if getattr(Config, "PUMP_FOCUS_MODE", False) and not is_fast_opportunity:
                 logger.info(
                     f"⏸️ {pair}: تجاهل الشراء (وضع القنص الصارم) | "
-                    f"السعر لا يظهر موجة صعود واضحة أو سيولة كافية حالياً."
+                    f"السعر لا يظهر موجة صعود واضحة"
                 )
                 return self._hold_signal(pair, "focus mode strict: no pump/steady setup")
 
+            # ✅ كل الفلاتر اجتازت - دخول احترافي مؤكد!
             strength = min(buy_score, 100)
             logger.info(
-                f"🟢 إشارة شراء {pair} | نقاط={buy_score} | "
-                f"AI={ai_score:.0f} | القوة={strength}"
+                f"🟢 إشارة شراء احترافية {pair} | نقاط={buy_score} | "
+                f"AI={ai_score:.0f} | تقاطع={confluence} | القوة={strength}"
             )
             for d in details[:5]:
                 logger.info(f"   ↳ {d}")
@@ -333,6 +364,7 @@ class StrategyEngine:
                 "is_steady": bool(pump_ctx.get("is_steady")),
                 "pump_metrics": pump_ctx,
                 "quick_exit_pct": quick_exit_pct,
+                "confluence": confluence,
             }
 
         # ──── قرار البيع ────
@@ -359,6 +391,54 @@ class StrategyEngine:
                 f"AI={ai_score:.0f} | ينقص {gap} نقطة للشراء"
             )
             return self._hold_signal(pair, f"نقاط غير كافية (شراء={buy_score})")
+
+    def _count_confluence(self, analysis, ai_score, pump_ctx):
+        """
+        عد عدد المؤشرات المتوافقة (Confluence Count).
+        المتداول المحترف يحتاج 3+ مؤشرات متفقة قبل الدخول.
+        هذا يمنع الدخول بناءً على مؤشر واحد قوي فقط (مثل RSI فقط).
+        """
+        count = 0
+
+        # 1. RSI في منطقة شراء (< 45)
+        rsi = analysis.get("rsi", 50)
+        if rsi < 45:
+            count += 1
+
+        # 2. الاتجاه صعودي
+        trend = analysis.get("trend", {})
+        if trend.get("direction") == "BULLISH":
+            count += 1
+
+        # 3. MACD إيجابي أو تقاطع صعودي
+        macd = analysis.get("macd_cross", {}).get("signal", "NEUTRAL")
+        if macd in ("BULLISH_CROSS", "BULLISH"):
+            count += 1
+
+        # 4. حجم مرتفع أو متزايد
+        vol = analysis.get("volume_analysis", {})
+        if vol.get("is_high") or vol.get("is_increasing"):
+            count += 1
+
+        # 5. AI يدعم الشراء (> 55)
+        if ai_score > 55:
+            count += 1
+
+        # 6. السعر قرب دعم أو تحت بولينجر
+        pos = analysis.get("price_position", {})
+        if pos.get("near_support") or pos.get("below_bb"):
+            count += 1
+
+        # 7. زخم صعودي (pump أو steady)
+        if pump_ctx.get("is_pump") or pump_ctx.get("is_steady"):
+            count += 1
+
+        # 8. شمعة صعودية
+        candle = analysis.get("candle_pattern", {})
+        if candle.get("direction") == "BULLISH":
+            count += 1
+
+        return count
 
     def _detect_pump_context(self, analysis):
         """
