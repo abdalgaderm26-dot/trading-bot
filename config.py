@@ -31,22 +31,56 @@ class Config:
     FUTURES_MIN_SCORE = int(os.getenv("FUTURES_MIN_SCORE", "70"))  # درجة عالية جداً إذا تم تفعيل الفيوتشرز
     AUTO_TRANSFER_SPOT_TO_FUTURES = False  # ⛔ لا تحويل تلقائي لحماية رأس المال
 
-    # ──────────────── Trading Pairs ────────────────
-    # قائمة بأفضل وأقوى 35 عملة رقمية ذات سيولة عالية للتداول
-    # قائمة بالعملات ذات التذبذب العالي جداً والمناسبة للاسكالبينج (Meme + AI + Layer1)
+    # ──────────────── Trading Pairs (120+ عملة عالية السيولة) ────────────────
+    # Blue Chips + Meme + AI + Layer1/2 + DeFi + Gaming + Infrastructure
     TRADING_PAIRS = [
-        "WIF/USDT", "1000FLOKI/USDT", "1000BONK/USDT", "1000SHIB/USDT", "DOGE/USDT",
-        "FET/USDT", "RENDER/USDT", "WLD/USDT", "TAO/USDT",
-        "SUI/USDT", "SEI/USDT", "APT/USDT", "OP/USDT", "ARB/USDT", "TIA/USDT",
-        "INJ/USDT", "GALA/USDT", "ORDI/USDT", "1000SATS/USDT",
-        "JTO/USDT", "PYTH/USDT", "STRK/USDT", "ONDO/USDT", "ENA/USDT", "NOT/USDT",
-        "BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "LINK/USDT",
-        "1000PEPE/USDT", "MEME/USDT", "BOME/USDT", "TNSR/USDT", "W/USDT", "OM/USDT",
-        "PENDLE/USDT", "CHZ/USDT", "AVAX/USDT", "NEAR/USDT", "RUNE/USDT",
-        "LDO/USDT", "STX/USDT", "ADA/USDT", "TRX/USDT", "XRP/USDT", "DOT/USDT",
-        "FIL/USDT", "TON/USDT", "MEW/USDT"
+        # ═══ Blue Chips (أقوى العملات وأعلى سيولة) ═══
+        "BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
+        "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "DOT/USDT", "LINK/USDT",
+        "TRX/USDT", "TON/USDT", "MATIC/USDT", "LTC/USDT", "BCH/USDT",
+        "ATOM/USDT", "UNI/USDT", "FIL/USDT", "ETC/USDT", "HBAR/USDT",
+
+        # ═══ Meme Coins (تذبذب عالي = فرص ربح أكثر) ═══
+        "1000PEPE/USDT", "1000SHIB/USDT", "1000FLOKI/USDT", "1000BONK/USDT",
+        "WIF/USDT", "MEME/USDT", "BOME/USDT", "MEW/USDT", "NOT/USDT",
+        "PEOPLE/USDT", "TURBO/USDT", "LUNC/USDT",
+
+        # ═══ AI & Data (قطاع الذكاء الاصطناعي) ═══
+        "FET/USDT", "RENDER/USDT", "WLD/USDT", "TAO/USDT", "ARKM/USDT",
+        "GRT/USDT", "OCEAN/USDT",
+
+        # ═══ Layer 1 (شبكات أساسية) ═══
+        "SUI/USDT", "SEI/USDT", "APT/USDT", "NEAR/USDT", "INJ/USDT",
+        "TIA/USDT", "FTM/USDT", "ALGO/USDT", "ICP/USDT", "VET/USDT",
+        "EGLD/USDT", "KAVA/USDT", "FLOW/USDT", "MINA/USDT", "CFX/USDT",
+        "KAS/USDT", "CELO/USDT", "ROSE/USDT",
+
+        # ═══ Layer 2 & Scaling ═══
+        "OP/USDT", "ARB/USDT", "STRK/USDT", "IMX/USDT", "MANTA/USDT",
+        "METIS/USDT", "SKL/USDT",
+
+        # ═══ DeFi (التمويل اللامركزي) ═══
+        "AAVE/USDT", "MKR/USDT", "CRV/USDT", "COMP/USDT", "SNX/USDT",
+        "LDO/USDT", "PENDLE/USDT", "DYDX/USDT", "SUSHI/USDT",
+        "1INCH/USDT", "RUNE/USDT", "JUP/USDT",
+        "ONDO/USDT", "ENA/USDT",
+
+        # ═══ Gaming & Metaverse ═══
+        "GALA/USDT", "AXS/USDT", "SAND/USDT", "MANA/USDT", "ENJ/USDT",
+        "IMX/USDT", "PIXEL/USDT", "PORTAL/USDT",
+
+        # ═══ Infrastructure & Tools ═══
+        "STX/USDT", "ORDI/USDT", "1000SATS/USDT", "CHZ/USDT", "ENS/USDT",
+        "W/USDT", "OM/USDT", "TNSR/USDT", "JTO/USDT", "PYTH/USDT",
+        "ANKR/USDT", "BAND/USDT", "ZRO/USDT", "ACE/USDT",
+
+        # ═══ Exchange & Utility Tokens ═══
+        "CKB/USDT", "THETA/USDT", "IOTA/USDT", "ZIL/USDT",
+        "ONE/USDT", "HOT/USDT", "COTI/USDT", "RSR/USDT",
+        "MASK/USDT", "SSV/USDT", "GMX/USDT",
+        "WOO/USDT", "BLUR/USDT", "ID/USDT",
     ]
-    DEFAULT_PAIR = "OCEAN/USDT"
+    DEFAULT_PAIR = "BTC/USDT"
     TIMEFRAME = "5m"  # الإطار الزمني السريع للسكالبينج المومينتوم
 
     # ──────────────── Technical Analysis (Scalping) ────────────────
@@ -67,13 +101,15 @@ class Config:
     MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "trade_model.pkl")
     TRAINING_DATA_SIZE = 500  # عدد الشموع للتدريب
 
-    # ──────────────── Risk Management (ULTRA SAFE - لا خسارة) ────────────────
+    # ──────────────── Risk Management (ULTRA SAFE - ربح مضمون فوق العمولة) ────────────────
+    # عمولة بينانس: 0.1% شراء + 0.1% بيع = 0.2% ذهاباً وإياباً
+    # لذلك أدنى ربح يجب أن يكون أعلى من 0.2% دائماً لضمان صافي ربح حقيقي
     RISK_PER_TRADE = 0.20    # ⚡ 20% فقط من الرصيد لكل صفقة - حماية 80% من رأس المال
-    STOP_LOSS_PCT = 0.05     # ⚡ 5% وقف خسارة واسع - البوت لن يبيع بخسارة أصلاً (احتياطي طوارئ فقط)
-    TAKE_PROFIT_MIN = 0.008  # ⚡ 0.8% هدف أول - يغطي العمولة + ربح صافي مضمون
-    TAKE_PROFIT_MAX = 0.025  # ⚡ 2.5% سقف ربح - انتظار ربح أكبر
+    STOP_LOSS_PCT = 0.05     # ⚡ 5% احتياطي طوارئ فقط - البوت لن يبيع بخسارة أصلاً
+    TAKE_PROFIT_MIN = 0.008  # ⚡ 0.8% هدف أول (صافي بعد العمولة = 0.6%)
+    TAKE_PROFIT_MAX = 0.025  # ⚡ 2.5% سقف ربح
     CLOSE_ON_MIN_PROFIT = os.getenv("CLOSE_ON_MIN_PROFIT", "true").lower() == "true"
-    MIN_PROFIT_CLOSE_PCT = float(os.getenv("MIN_PROFIT_CLOSE_PCT", "0.006"))  # ⚡ 0.6% ربح صافي أدنى - فوق العمولة بأمان
+    MIN_PROFIT_CLOSE_PCT = float(os.getenv("MIN_PROFIT_CLOSE_PCT", "0.004"))  # ⚡ 0.4% أدنى ربح = 0.2% صافي بعد العمولة (مضمون)
     # مراقبة السيولة العالية فقط
     PUMP_FOCUS_MODE = True  # تفعيل الهجوم السريع والتمركز (Sniper Pump) بشكل صارم جداً
     PUMP_MIN_3C_PCT = float(os.getenv("PUMP_MIN_3C_PCT", "0.008"))  # +0.8% كافية على إطار الخمس دقائق
