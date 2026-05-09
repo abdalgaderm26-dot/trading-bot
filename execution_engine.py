@@ -812,14 +812,13 @@ class ExecutionEngine:
                         pairs_to_close.append((pair, trade, "TAKE_PROFIT_FULL"))
 
                 else:  # SHORT
-                    if current_price >= float(trade["stop_loss"]):
-                        # ⚡ وقف خسارة فوري وحاسم - لا تردد ولا انتظار
-                        pnl_ratio = self._pnl_ratio(trade, current_price)
-                        logger.warning(
-                            f"🛑 {pair} (SHORT): STOP LOSS TRIGGERED! price={current_price:.6f} "
-                            f"loss={pnl_ratio:.2%} - CLOSING IMMEDIATELY"
-                        )
-                        pairs_to_close.append((pair, trade, "STOP_LOSS"))
+                    # ⚡ لا نبيع بخسارة أبداً - ننتظر حتى ينخفض السعر
+                    pnl_ratio = self._pnl_ratio(trade, current_price)
+                    if pnl_ratio < 0:
+                        if pnl_ratio < -0.03:
+                            logger.warning(
+                                f"⚠️ {pair} (SHORT): خسارة كبيرة ({pnl_ratio:.2%}) - ننتظر الارتداد"
+                            )
                         continue
 
                     if self._reached_min_profit(trade, current_price):

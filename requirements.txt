@@ -30,3 +30,4 @@ cryptography==44.0.0
 # === HTTP ===
 aiohttp==3.10.11
 requests==2.32.3
+websockets>=12.0

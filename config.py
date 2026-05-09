@@ -36,15 +36,15 @@ class Config:
     # قائمة بالعملات ذات التذبذب العالي جداً والمناسبة للاسكالبينج (Meme + AI + Layer1)
     TRADING_PAIRS = [
         "WIF/USDT", "1000FLOKI/USDT", "1000BONK/USDT", "1000SHIB/USDT", "DOGE/USDT",
-        "FET/USDT", "RNDR/USDT", "WLD/USDT", "TAO/USDT",
+        "FET/USDT", "RENDER/USDT", "WLD/USDT", "TAO/USDT",
         "SUI/USDT", "SEI/USDT", "APT/USDT", "OP/USDT", "ARB/USDT", "TIA/USDT",
         "INJ/USDT", "GALA/USDT", "ORDI/USDT", "1000SATS/USDT",
         "JTO/USDT", "PYTH/USDT", "STRK/USDT", "ONDO/USDT", "ENA/USDT", "NOT/USDT",
         "BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "LINK/USDT",
         "1000PEPE/USDT", "MEME/USDT", "BOME/USDT", "TNSR/USDT", "W/USDT", "OM/USDT",
-        "PENDLE/USDT", "FRONT/USDT", "CHZ/USDT", "AVAX/USDT", "NEAR/USDT", "RUNE/USDT",
+        "PENDLE/USDT", "CHZ/USDT", "AVAX/USDT", "NEAR/USDT", "RUNE/USDT",
         "LDO/USDT", "STX/USDT", "ADA/USDT", "TRX/USDT", "XRP/USDT", "DOT/USDT",
-        "GALA/USDT", "FIL/USDT", "TON/USDT", "MEW/USDT"
+        "FIL/USDT", "TON/USDT", "MEW/USDT"
     ]
     DEFAULT_PAIR = "OCEAN/USDT"
     TIMEFRAME = "5m"  # الإطار الزمني السريع للسكالبينج المومينتوم
