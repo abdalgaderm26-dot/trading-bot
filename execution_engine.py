@@ -315,7 +315,9 @@ class ExecutionEngine:
             )
 
     def _reached_min_profit(self, trade: dict, current_price: float) -> bool:
-        """Check fast-exit mode: close the whole trade at minimal profit."""
+        """Check fast-exit mode: close the whole trade at minimal profit.
+        ✅ يخصم العمولة قبل المقارنة لتجنب البيع بربح وهمي.
+        """
         if not getattr(Config, "CLOSE_ON_MIN_PROFIT", False):
             return False
 
@@ -338,7 +340,11 @@ class ExecutionEngine:
         else:
             pnl_ratio = (entry_price - current_price) / entry_price
 
-        return pnl_ratio >= min_profit_pct
+        # ✅ خصم العمولة من الربح الفعلي قبل القرار
+        fee_pct = getattr(Config, "EXCHANGE_FEE_PCT", 0.002)
+        net_pnl = pnl_ratio - fee_pct
+
+        return net_pnl >= min_profit_pct
 
     def _pnl_ratio(self, trade: dict, current_price: float) -> float:
         """Return signed pnl ratio (e.g. -0.01 = -1%)."""
@@ -479,7 +485,9 @@ class ExecutionEngine:
             return {"success": False, "reason": "filled amount is zero"}
         quick_exit_pct = float(signal.get("quick_exit_pct", 0.0) or 0.0)
         tp_mid = (Config.TAKE_PROFIT_MIN + Config.TAKE_PROFIT_MAX) / 2
-        break_even_pct = max(0.0015, Config.TAKE_PROFIT_MIN * 0.5)
+        # ✅ Break-even يتفعل بعد تغطية العمولة + هامش أمان
+        fee_pct = getattr(Config, "EXCHANGE_FEE_PCT", 0.002)
+        break_even_pct = max(fee_pct * 2.5, Config.TAKE_PROFIT_MIN * 0.5)  # ~0.5%
 
         trade = {
             "pair": pair,
@@ -837,13 +845,18 @@ class ExecutionEngine:
                         continue
 
                     if (not trade["trailing_active"]) and current_price <= float(trade["break_even_level"]):
-                        trade["stop_loss"] = entry_price * 0.9995
+                        # ✅ نقل وقف الخسارة لنقطة الدخول = ربح مضمون
+                        trade["stop_loss"] = entry_price * 0.999
                         trade["trailing_active"] = True
                         trade["trailing_low"] = current_price
+                        logger.info(
+                            f"🔒 {pair} (SHORT): Break-Even! SL → {trade['stop_loss']:.6f}"
+                        )
 
                     if trade["trailing_active"] and current_price < float(trade.get("trailing_low", entry_price)):
                         trade["trailing_low"] = current_price
-                        new_sl = current_price * (1 + float(trade["trailing_distance"]))
+                        trail_dist = min(float(trade["trailing_distance"]), 0.005)
+                        new_sl = current_price * (1 + trail_dist)
                         if new_sl < float(trade["stop_loss"]):
                             trade["stop_loss"] = new_sl
 

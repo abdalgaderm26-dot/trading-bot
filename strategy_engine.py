@@ -338,6 +338,28 @@ class StrategyEngine:
                 logger.info(f"⏸️ {pair}: السوق هابط بقوة - لا تشتري ضد التيار")
                 return self._hold_signal(pair, "اتجاه هابط قوي")
 
+            # ═══ فلتر 6: لا تشتري سكين ساقط (شمعة هبوطية كبيرة) ═══
+            candle = analysis.get("candle_pattern", {})
+            if candle.get("direction") == "BEARISH" and candle.get("score", 0) > 60:
+                logger.info(f"⏸️ {pair}: شمعة هبوطية قوية - سكين ساقط!")
+                return self._hold_signal(pair, "شمعة هبوطية قوية - انتظار استقرار")
+
+            # ═══ فلتر 7: لا تشتري فوق المقاومة بكثير (ممتد) ═══
+            price_pos = analysis.get("price_position", {})
+            if price_pos.get("above_bb"):
+                bb_upper = analysis.get("bb_upper", 0)
+                current = analysis.get("price", 0)
+                if bb_upper > 0 and current > bb_upper * 1.005:
+                    logger.info(f"⏸️ {pair}: السعر فوق بولينجر العلوي = ممتد")
+                    return self._hold_signal(pair, "سعر ممتد فوق بولينجر")
+
+            # ═══ فلتر 8: التأكد أن الربح المتوقع > العمولة الفعلية ═══
+            atr_pct = float(analysis.get("atr_pct", 0) or 0)
+            fee_pct = getattr(Config, "EXCHANGE_FEE_PCT", 0.002)
+            if atr_pct > 0 and atr_pct < fee_pct * 3:
+                logger.info(f"⏸️ {pair}: ATR ({atr_pct:.3%}) < 3x العمولة ({fee_pct*3:.3%})")
+                return self._hold_signal(pair, "تذبذب أقل من 3 أضعاف العمولة")
+
             # ═══ فلتر Pump Focus ═══
             is_fast_opportunity = bool(
                 pump_ctx.get("is_pump") or pump_ctx.get("is_steady")

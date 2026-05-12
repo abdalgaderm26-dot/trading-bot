@@ -102,7 +102,7 @@ class Config:
     VOLUME_MULTIPLIER = 1.5  # حجم التداول يجب أن يكون 1.5x المتوسط
 
     # ──────────────── AI Model ────────────────
-    AI_SCORE_THRESHOLD = 75  # ⚡ لا تدخل إلا في أفضل فرصة ممكنة - ثقة 75%+
+    AI_SCORE_THRESHOLD = 65  # ✅ لا تدخل إلا بثقة AI عالية
     MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "trade_model.pkl")
     TRAINING_DATA_SIZE = 500  # عدد الشموع للتدريب
 
