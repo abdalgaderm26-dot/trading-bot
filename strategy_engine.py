@@ -255,18 +255,25 @@ class StrategyEngine:
         if regime:
             r = regime.get("regime", "UNKNOWN")
             if r == "TRENDING_UP":
-                buy_score *= 1.15  # تعزيز 15%
+                buy_score *= 1.15
                 details.append("سوق صعودي ×1.15")
             elif r == "TRENDING_DOWN":
                 sell_score *= 1.15
             elif r == "VOLATILE":
-                buy_score *= 0.6  # تخفيض 40%
+                buy_score *= 0.6
                 sell_score *= 0.6
                 details.append("⚠️ سوق متذبذب ×0.6")
             elif r == "RANGING":
-                # في السوق الجانبي: شراء عند دعم أكثر أهمية
                 if position.get("near_support"):
                     buy_score *= 1.2
+
+        # ═══════ 13. Trend Pullback Bonus (الأهم!) ═══════
+        pullback = self._is_trend_pullback(analysis)
+        if pullback["is_pullback"]:
+            buy_score += 20
+            details.append(
+                f"🎯 انخفاض في صعود! (4h={pullback['trend_4h']}, RSI15m={pullback['rsi_short']:.0f}) +20"
+            )
 
         return round(buy_score), round(sell_score), details, pump_ctx
 
@@ -292,6 +299,13 @@ class StrategyEngine:
 
         # ──── قرار الشراء ────
         if buy_score >= self.buy_threshold and ai_score >= self.min_ai_score:
+
+            # ═══ فلتر 0: Trend Pullback يعطي أولوية ═══
+            pullback = self._is_trend_pullback(analysis)
+            if pullback["is_pullback"]:
+                logger.info(
+                    f"🎯 {pair}: فرصة Pullback! الاتجاه صاعد + السعر تراجع مؤقتاً"
+                )
 
             # ═══ فلتر 1: التحقق من التذبذب كافي لتغطية العمولة ═══
             if not self._profit_guarantee_filter(analysis, pair):
@@ -511,6 +525,72 @@ class StrategyEngine:
             return context
         except Exception:
             return context
+
+    def _is_trend_pullback(self, analysis) -> dict:
+        """
+        كشف "الانخفاض المؤقت في اتجاه صاعد" (Trend Pullback).
+        هذا هو أفضل وقت للشراء: الاتجاه العام صاعد لكن السعر تراجع مؤقتاً.
+        
+        الشروط:
+        1. الاتجاه على الإطار الأكبر (4h/1h) = صاعد
+        2. RSI على الإطار الأصغر (15m) < 40 = تراجع مؤقت
+        3. MACD يبدأ بالتحول للصعود = بداية ارتداد
+        """
+        result = {
+            "is_pullback": False,
+            "trend_4h": "UNKNOWN",
+            "rsi_short": 50,
+            "confidence": 0,
+        }
+
+        try:
+            # الاتجاه الرئيسي (من التحليل الحالي)
+            trend = analysis.get("trend", {})
+            trend_dir = trend.get("direction", "NEUTRAL")
+            rsi = analysis.get("rsi", 50)
+            macd_cross = analysis.get("macd_cross", {}).get("signal", "NEUTRAL")
+            momentum = analysis.get("momentum_score", 50)
+
+            # MTF data إذا متوفر
+            mtf = analysis.get("mtf", {})
+            trend_4h = "UNKNOWN"
+            if mtf:
+                trend_4h = mtf.get("4h", {}).get("trend", "UNKNOWN")
+
+            # شروط الـ Pullback:
+            # 1. الاتجاه العام صاعد (الإطار الحالي أو 4h)
+            is_uptrend = trend_dir == "BULLISH" or trend_4h == "BULLISH"
+
+            # 2. RSI منخفض = تراجع مؤقت (أقل من 42)
+            is_dip = rsi < 42
+
+            # 3. بداية ارتداد (MACD صعودي أو تقاطع)
+            is_recovering = macd_cross in ("BULLISH_CROSS", "BULLISH")
+
+            # 4. الزخم لا يزال إيجابي على المدى المتوسط
+            has_momentum = momentum >= 40
+
+            result["trend_4h"] = trend_4h if trend_4h != "UNKNOWN" else trend_dir
+            result["rsi_short"] = rsi
+
+            if is_uptrend and is_dip and is_recovering and has_momentum:
+                result["is_pullback"] = True
+                # حساب الثقة
+                confidence = 50
+                if rsi < 35:
+                    confidence += 15
+                if macd_cross == "BULLISH_CROSS":
+                    confidence += 15
+                if trend_4h == "BULLISH":
+                    confidence += 10
+                if momentum >= 55:
+                    confidence += 10
+                result["confidence"] = min(100, confidence)
+
+        except Exception:
+            pass
+
+        return result
 
     def _hold_signal(self, pair, reason=""):
         return {

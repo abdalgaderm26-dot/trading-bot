@@ -270,50 +270,126 @@ class TradingBot:
         logger.info(f"🌍 IP العام (Public):  {public_ip}")
         logger.info("=" * 50)
 
-
     def train_ai_model(self):
-        """ØªØ¯Ø±ÙŠØ¨ Ù†Ù…Ø§Ø°Ø¬ AI Ensemble"""
-        logger.info("ðŸ§  Ø¨Ø¯Ø¡ ØªØ¯Ø±ÙŠØ¨ AI Ensemble...")
+        """تدريب نماذج AI Ensemble"""
+        logger.info("🧠 بدء تدريب AI Ensemble...")
         for pair in Config.TRADING_PAIRS:
             try:
                 ohlcv = self.client.fetch_ohlcv(pair, limit=500)
                 if ohlcv and len(ohlcv) > 200:
                     self.ai_model.train(ohlcv)
-                    logger.info(f"âœ… ØªÙ… ØªØ¯Ø±ÙŠØ¨ Ensemble Ø¹Ù„Ù‰ {pair}")
+                    logger.info(f"✅ تم تدريب Ensemble على {pair}")
                 else:
-                    logger.warning(f"âš ï¸ Ø¨ÙŠØ§Ù†Ø§Øª ØºÙŠØ± ÙƒØ§ÙÙŠØ© Ù„ØªØ¯Ø±ÙŠØ¨ {pair}")
+                    logger.warning(f"⚠️ بيانات غير كافية لتدريب {pair}")
             except Exception as e:
-                logger.error(f"âŒ Ø®Ø·Ø£ ØªØ¯Ø±ÙŠØ¨ AI Ø¹Ù„Ù‰ {pair}: {e}")
+                logger.error(f"❌ خطأ تدريب AI على {pair}: {e}")
             finally:
-                # Keep exit monitoring active during long startup/training phase.
                 try:
                     if self.execution.open_trades:
                         self.execution.check_open_trades()
                 except Exception as monitor_err:
                     logger.error(f"❌ خطأ مراقبة الصفقات أثناء التدريب: {monitor_err}")
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ø¯ÙˆØ±Ø© Ø§Ù„ØªØ¯Ø§ÙˆÙ„ v2.0 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    async def trading_cycle(self):
-        """Ø¯ÙˆØ±Ø© ØªØ¯Ø§ÙˆÙ„ Ø§Ø­ØªØ±Ø§ÙÙŠØ©"""
+    # ──────────────── المسح السريع (Quick Scan) ────────────────
+    def _quick_scan(self) -> list:
+        """
+        المرحلة 1: مسح سريع لكل العملات وترتيبها حسب النشاط.
+        يُرجع أفضل N عملة (نشاط + اتجاه صاعد) للتحليل العميق.
+        """
+        import numpy as np
+        scored_pairs = []
+        top_n = getattr(Config, "QUICK_SCAN_TOP_N", 20)
 
-        # Fast monitor pass so profit exits are not delayed.
+        for pair in Config.TRADING_PAIRS:
+            try:
+                ohlcv = self.ws_manager.fetch_ohlcv(pair, limit=50)
+                if not ohlcv or len(ohlcv) < 25:
+                    continue
+
+                closes = [float(c[4]) for c in ohlcv if len(c) >= 5]
+                volumes = [float(c[5]) for c in ohlcv if len(c) >= 6]
+                if len(closes) < 25 or len(volumes) < 20:
+                    continue
+
+                current_price = closes[-1]
+                if current_price <= 0:
+                    continue
+
+                # 1. EMA20 - هل الاتجاه صاعد؟
+                ema_period = getattr(Config, "QUICK_SCAN_TREND_EMA", 20)
+                ema = np.mean(closes[-ema_period:])
+                trend_score = (current_price - ema) / ema
+
+                # 2. نسبة الحجم - هل هناك نشاط؟
+                avg_vol = np.mean(volumes[-20:]) if np.mean(volumes[-20:]) > 0 else 1
+                vol_ratio = volumes[-1] / avg_vol
+
+                # 3. تغير السعر خلال آخر 6 شموع
+                pct_change_6 = (closes[-1] - closes[-7]) / closes[-7] if closes[-7] > 0 else 0
+
+                # 4. ATR% - هل التذبذب كافي للربح؟
+                highs = [float(c[2]) for c in ohlcv[-14:] if len(c) >= 3]
+                lows = [float(c[3]) for c in ohlcv[-14:] if len(c) >= 4]
+                atr_values = [h - l for h, l in zip(highs, lows)]
+                atr_pct = (np.mean(atr_values) / current_price) if atr_values else 0
+
+                # النقاط: اتجاه صاعد + حجم عالي + تذبذب كافي
+                composite = (
+                    trend_score * 40 +
+                    min(vol_ratio, 5) * 15 +
+                    pct_change_6 * 30 +
+                    atr_pct * 15
+                )
+
+                scored_pairs.append({
+                    "pair": pair,
+                    "score": composite,
+                    "trend_score": trend_score,
+                    "vol_ratio": vol_ratio,
+                    "pct_change": pct_change_6,
+                    "atr_pct": atr_pct,
+                })
+            except Exception:
+                continue
+
+        scored_pairs.sort(key=lambda x: x["score"], reverse=True)
+        top_pairs = scored_pairs[:top_n]
+
+        if top_pairs:
+            top_names = [p["pair"].split("/")[0] for p in top_pairs[:5]]
+            logger.info(
+                f"🔍 مسح سريع: {len(Config.TRADING_PAIRS)} عملة → أفضل {len(top_pairs)} | "
+                f"Top5: {', '.join(top_names)}"
+            )
+
+        return top_pairs
+
+    # ──────────────── دورة التداول v3.0 (Trend Pullback Sniper) ────────────────
+    async def trading_cycle(self):
+        """دورة تداول احترافية - مسح سريع ثم تحليل عميق"""
+
+        # مراقبة الصفقات المفتوحة أولاً
         try:
             self.execution.check_open_trades()
         except Exception as e:
             logger.error(f"❌ خطأ مراقبة الصفقات (بداية الدورة): {e}")
-        
-        # 0. ÙØ­Øµ Ø§Ù†Ù‡ÙŠØ§Ø± Ø§Ù„Ø³ÙˆÙ‚ Ø§Ù„Ø´Ø§Ù…Ù„ (Global Kill Switch)
+
+        # 0. فحص انهيار السوق
         btc_ohlcv = self.ws_manager.fetch_ohlcv("BTC/USDT", limit=2)
         if btc_ohlcv and len(btc_ohlcv) > 0:
             btc_current = btc_ohlcv[-1][4] if len(btc_ohlcv[-1]) >= 5 else 0
             btc_open = btc_ohlcv[-1][1] if len(btc_ohlcv[-1]) >= 2 else 0
-            
             if self.risk.check_global_crash(btc_current, btc_open):
-                logger.critical("ðŸš¨ ØªØ¹Ù„ÙŠÙ‚ Ø¯ÙˆØ±Ø© Ø§Ù„ØªØ¯Ø§ÙˆÙ„ Ù…Ø¤Ù‚ØªØ§Ù‹ Ù„Ø­ÙŠÙ† Ø§Ø³ØªÙ‚Ø±Ø§Ø± Ø§Ù„Ø³ÙˆÙ‚!")
+                logger.critical("🚨 تعليق دورة التداول مؤقتاً!")
                 self.execution.close_all_trades("BTC_FLASH_CRASH")
-                return  # ØªØ®Ø·ÙŠ Ø§Ù„Ø¯ÙˆØ±Ø© ÙˆØ¹Ø¯Ù… ÙØªØ­ Ø£ÙŠ ØµÙÙ‚Ø§Øª
-        
-        for idx, pair in enumerate(Config.TRADING_PAIRS, start=1):
+                return
+
+        # ═══ المرحلة 1: المسح السريع ═══
+        top_pairs = self._quick_scan()
+        scan_pairs = [p["pair"] for p in top_pairs] if top_pairs else Config.TRADING_PAIRS[:20]
+
+        # ═══ المرحلة 2: التحليل العميق لأفضل 20 فقط ═══
+        for idx, pair in enumerate(scan_pairs, start=1):
             try:
                 # 1. Ø¬Ù„Ø¨ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù„Ø­Ø¸ÙŠØ© Ù…Ù† Ø§Ù„Ø°Ø§ÙƒØ±Ø© (Ø³Ø±ÙŠØ¹ Ø¬Ø¯Ø§Ù‹)
                 ohlcv = self.ws_manager.fetch_ohlcv(pair, limit=300)

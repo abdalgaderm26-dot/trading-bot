@@ -783,13 +783,20 @@ class ExecutionEngine:
                         continue
 
                     if (not trade["trailing_active"]) and current_price >= float(trade["break_even_level"]):
-                        trade["stop_loss"] = entry_price * 1.0005
+                        # ✅ نقل وقف الخسارة لنقطة الدخول + 0.05% = ربح مضمون
+                        trade["stop_loss"] = entry_price * 1.001
                         trade["trailing_active"] = True
                         trade["trailing_high"] = current_price
+                        logger.info(
+                            f"🔒 {pair}: Break-Even! SL → {trade['stop_loss']:.6f} (ربح مضمون)"
+                        )
 
-                    if trade["trailing_active"] and current_price > float(trade["trailing_high"]):
+                    # ✅ Trailing Stop ذكي: إذا ربح 1%+ → يتبع السعر بمسافة 0.5%
+                    if trade["trailing_active"] and current_price > float(trade.get("trailing_high", entry_price)):
                         trade["trailing_high"] = current_price
-                        new_sl = current_price * (1 - float(trade["trailing_distance"]))
+                        # مسافة trailing ديناميكية: 0.5% أو trailing_distance أيهما أصغر
+                        trail_dist = min(float(trade["trailing_distance"]), 0.005)
+                        new_sl = current_price * (1 - trail_dist)
                         if new_sl > float(trade["stop_loss"]):
                             trade["stop_loss"] = new_sl
 

@@ -81,7 +81,12 @@ class Config:
         "WOO/USDT", "BLUR/USDT", "ID/USDT",
     ]
     DEFAULT_PAIR = "BTC/USDT"
-    TIMEFRAME = "5m"  # الإطار الزمني السريع للسكالبينج المومينتوم
+    TIMEFRAME = "15m"  # ✅ إطار 15 دقيقة - أوضح وأقل ضوضاء من 5m
+
+    # ──────────────── Quick Scan (Trend Pullback Sniper) ────────────────
+    QUICK_SCAN_TOP_N = 20          # فقط أفضل 20 عملة تحصل على تحليل عميق
+    QUICK_SCAN_MIN_VOLUME_RATIO = 1.0  # حجم أعلى من المتوسط
+    QUICK_SCAN_TREND_EMA = 20      # EMA20 لكشف الاتجاه السريع
 
     # ──────────────── Technical Analysis (Scalping) ────────────────
     RSI_PERIOD = 14
