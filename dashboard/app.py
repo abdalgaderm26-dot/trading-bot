@@ -285,6 +285,69 @@ async def api_close_trade(request: Request):
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
+@app.get("/api/sell_asset/{asset}")
+async def api_sell_asset(asset: str):
+    """بيع عملة وتحويلها لـ USDT - يعمل من Railway مباشرة"""
+    try:
+        client = bot_ref.get("client")
+        if not client:
+            return JSONResponse({"status": "error", "message": "client not connected"}, status_code=500)
+
+        asset = asset.upper().strip()
+        if asset == "USDT":
+            return {"status": "skip", "message": "already USDT"}
+
+        symbol = f"{asset}/USDT"
+
+        # جلب الرصيد
+        balance = client.fetch_balance()
+        free = float(balance.get(asset, {}).get("free", 0) or 0)
+        if free <= 0:
+            return {"status": "error", "message": f"no {asset} balance"}
+
+        # جلب السعر
+        ticker = client.fetch_ticker(symbol)
+        price = float(ticker["last"]) if ticker else 0
+        if price <= 0:
+            return {"status": "error", "message": "invalid price"}
+
+        value = free * price
+        if value < 5:
+            return {"status": "skip", "message": f"value too low: ${value:.2f}"}
+
+        # تطبيع الكمية
+        amount = free * 0.999
+        try:
+            amount = float(client.exchange.amount_to_precision(symbol, amount))
+        except Exception:
+            pass
+
+        if amount <= 0:
+            return {"status": "error", "message": "amount too small after precision"}
+
+        # البيع
+        order = client.create_market_order(symbol, "SELL", amount)
+        if not order:
+            return {"status": "error", "message": "sell order failed"}
+
+        filled = float(order.get("filled", amount))
+        avg = float(order.get("average", price))
+        total = filled * avg
+
+        logger.info(f"✅ Sold {filled} {asset} @ ${avg} = ${total:.2f} USDT")
+        return {
+            "status": "success",
+            "asset": asset,
+            "amount_sold": filled,
+            "price": avg,
+            "usdt_received": round(total, 2)
+        }
+
+    except Exception as e:
+        logger.error(f"Sell {asset} error: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
 # ──────────────── WebSockets ────────────────
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
