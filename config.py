@@ -116,7 +116,7 @@ class Config:
     CLOSE_ON_MIN_PROFIT = True  # ✅ ثابت - لا يقرأ من البيئة
     MIN_PROFIT_CLOSE_PCT = 0.008  # ✅ 0.8% = ربح صافي 0.6% بعد العمولة (لا يقرأ من env!)
     # وضع القنص: يبحث عن عملات بداية صعود (وليس بعد الصعود)
-    PUMP_FOCUS_MODE = os.getenv("PUMP_FOCUS_MODE", "false").lower() == "true"  # ✅ معطل افتراضياً - كان يسبب الشراء في القمم
+    PUMP_FOCUS_MODE = False  # ✅ ثابت - معطل للأمان
     PUMP_MIN_3C_PCT = float(os.getenv("PUMP_MIN_3C_PCT", "0.008"))
     PUMP_MIN_5C_PCT = float(os.getenv("PUMP_MIN_5C_PCT", "0.012"))
     PUMP_VOLUME_RATIO_MIN = float(os.getenv("PUMP_VOLUME_RATIO_MIN", "1.5"))
@@ -133,9 +133,9 @@ class Config:
     AUTO_CONVERT_MIN_USDT_VALUE = float(os.getenv("AUTO_CONVERT_MIN_USDT_VALUE", "5.0"))
     AUTO_CONVERT_BUFFER_RATIO = float(os.getenv("AUTO_CONVERT_BUFFER_RATIO", "0.995"))
     DAILY_LOSS_LIMIT = 0.03  # إذا خسر 3% - يتوقف فوراً
-    MAX_OPEN_TRADES = 3      # ✅ 3 صفقات لتنويع المخاطر بدل صفقة واحدة
-    ORDER_COOLDOWN = 120     # ✅ دقيقتين بين الصفقات (بدل 5 دقائق)
-    MAX_CAPITAL_PER_TRADE = float(os.getenv("MAX_CAPITAL_PER_TRADE", "0.15"))  # ✅ أقصى 15% من الرصيد لكل صفقة
+    MAX_OPEN_TRADES = 3      # ✅ 3 صفقات لتنويع المخاطر
+    ORDER_COOLDOWN = 180     # ✅ 3 دقائق بين الصفقات (يمنع إعادة الدخول السريع بعد وقف خسارة)
+    MAX_CAPITAL_PER_TRADE = 0.15  # ✅ ثابت 15% - لا يقرأ من env! (Railway كان يضع 98%!)
     MIN_TRADE_NOTIONAL = 5.0
     BALANCE_CACHE_TTL = 8
     ORDER_BOOK_CACHE_SECONDS = 20

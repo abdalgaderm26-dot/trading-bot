@@ -31,9 +31,9 @@ class StrategyEngine:
             self.min_ai_score = 60
         else:
             # وضع Spot المحترف: دخول عالي الثقة فقط لضمان الربح
-            self.buy_threshold = 75   # ⚡ أفضل فرصة فقط - 75% من المؤشرات متوافقة
+            self.buy_threshold = 78   # ⚡ نقاط عالية = فرصة أقوى
             self.sell_threshold = 50
-            self.min_ai_score = 60   # ⚡ ذكاء اصطناعي عالي الثقة إلزامي
+            self.min_ai_score = 65   # ⚡ AI 65%+ إلزامي (بدل 60 - كان يمرر إشارات ضعيفة)
 
     # ──────────────── التقييم الرئيسي ────────────────
     def evaluate(self, ohlcv_data, pair, client=None) -> dict:
