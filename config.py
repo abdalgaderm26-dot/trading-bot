@@ -33,23 +33,24 @@ class Config:
 
     # ──────────────── Trading Pairs (120+ عملة عالية السيولة) ────────────────
     # Blue Chips + Meme + AI + Layer1/2 + DeFi + Gaming + Infrastructure
+    # ✅ أسماء Spot الصحيحة (بدون 1000 prefix الخاص بـ Futures)
     TRADING_PAIRS = [
         # ═══ Blue Chips (أقوى العملات وأعلى سيولة) ═══
         "BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
         "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "DOT/USDT", "LINK/USDT",
-        "TRX/USDT", "TON/USDT", "MATIC/USDT", "LTC/USDT", "BCH/USDT",
+        "TRX/USDT", "TON/USDT", "POL/USDT", "LTC/USDT", "BCH/USDT",
         "ATOM/USDT", "UNI/USDT", "FIL/USDT", "ETC/USDT", "HBAR/USDT",
 
-        # ═══ Meme Coins (تذبذب عالي = فرص ربح أكثر) ═══
-        "1000PEPE/USDT", "1000SHIB/USDT", "1000FLOKI/USDT", "1000BONK/USDT",
-        "WIF/USDT", "MEME/USDT", "BOME/USDT", "MEW/USDT", "NOT/USDT",
+        # ═══ Meme Coins (أسماء Spot الصحيحة!) ═══
+        "PEPE/USDT", "SHIB/USDT", "FLOKI/USDT", "BONK/USDT",
+        "WIF/USDT", "MEME/USDT", "BOME/USDT", "NOT/USDT",
         "PEOPLE/USDT", "TURBO/USDT", "LUNC/USDT",
 
-        # ═══ AI & Data (قطاع الذكاء الاصطناعي) ═══
+        # ═══ AI & Data ═══
         "FET/USDT", "RENDER/USDT", "WLD/USDT", "TAO/USDT", "ARKM/USDT",
-        "GRT/USDT", "OCEAN/USDT",
+        "GRT/USDT",
 
-        # ═══ Layer 1 (شبكات أساسية) ═══
+        # ═══ Layer 1 ═══
         "SUI/USDT", "SEI/USDT", "APT/USDT", "NEAR/USDT", "INJ/USDT",
         "TIA/USDT", "FTM/USDT", "ALGO/USDT", "ICP/USDT", "VET/USDT",
         "EGLD/USDT", "KAVA/USDT", "FLOW/USDT", "MINA/USDT", "CFX/USDT",
@@ -57,9 +58,9 @@ class Config:
 
         # ═══ Layer 2 & Scaling ═══
         "OP/USDT", "ARB/USDT", "STRK/USDT", "IMX/USDT", "MANTA/USDT",
-        "METIS/USDT", "SKL/USDT",
+        "SKL/USDT",
 
-        # ═══ DeFi (التمويل اللامركزي) ═══
+        # ═══ DeFi ═══
         "AAVE/USDT", "MKR/USDT", "CRV/USDT", "COMP/USDT", "SNX/USDT",
         "LDO/USDT", "PENDLE/USDT", "DYDX/USDT", "SUSHI/USDT",
         "1INCH/USDT", "RUNE/USDT", "JUP/USDT",
@@ -67,16 +68,14 @@ class Config:
 
         # ═══ Gaming & Metaverse ═══
         "GALA/USDT", "AXS/USDT", "SAND/USDT", "MANA/USDT", "ENJ/USDT",
-        "IMX/USDT", "PIXEL/USDT", "PORTAL/USDT",
+        "PIXEL/USDT",
 
-        # ═══ Infrastructure & Tools ═══
-        "STX/USDT", "ORDI/USDT", "1000SATS/USDT", "CHZ/USDT", "ENS/USDT",
-        "W/USDT", "OM/USDT", "TNSR/USDT", "JTO/USDT", "PYTH/USDT",
-        "ANKR/USDT", "BAND/USDT", "ZRO/USDT", "ACE/USDT",
-
-        # ═══ Exchange & Utility Tokens ═══
+        # ═══ Infrastructure & Utility ═══
+        "STX/USDT", "ORDI/USDT", "CHZ/USDT", "ENS/USDT",
+        "W/USDT", "OM/USDT", "JTO/USDT", "PYTH/USDT",
+        "ANKR/USDT", "BAND/USDT", "ZRO/USDT",
         "CKB/USDT", "THETA/USDT", "IOTA/USDT", "ZIL/USDT",
-        "ONE/USDT", "HOT/USDT", "COTI/USDT", "RSR/USDT",
+        "ONE/USDT", "HOT/USDT", "RSR/USDT",
         "MASK/USDT", "SSV/USDT", "GMX/USDT",
         "WOO/USDT", "BLUR/USDT", "ID/USDT",
     ]
