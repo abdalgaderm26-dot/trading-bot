@@ -22,8 +22,8 @@ class Config:
     BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET", "")
     BINANCE_SANDBOX = os.getenv("BINANCE_SANDBOX", "true").lower() == "true"
     
-    # ──────────────── Futures Trading (Professional) ────────────────
-    ENABLE_FUTURES = os.getenv("ENABLE_FUTURES", "false").lower() == "true"  # يقرأ من البيئة
+    # ✅ تثبيت على Spot - لا يقرأ من البيئة لتجنب تحويل خاطئ لـ Futures
+    ENABLE_FUTURES = False
     FUTURES_LEVERAGE = int(os.getenv("FUTURES_LEVERAGE", "3"))
     FUTURES_MARGIN_MODE = "isolated"
     FUTURES_SERVER_SL = os.getenv("FUTURES_SERVER_SL", "true").lower() == "true"
