@@ -800,12 +800,15 @@ class ExecutionEngine:
                         continue
 
                     if (not trade["trailing_active"]) and current_price >= float(trade["break_even_level"]):
-                        # ✅ نقل وقف الخسارة لنقطة الدخول + 0.05% = ربح مضمون
-                        trade["stop_loss"] = entry_price * 1.001
+                        # ✅ Break-Even: نقل SL لنقطة الدخول + عمولة + هامش أمان
+                        # العمولة = 0.2% (شراء+بيع) + هامش 0.15% = 0.35%
+                        fee_pct = getattr(Config, "EXCHANGE_FEE_PCT", 0.002)
+                        be_sl = entry_price * (1 + fee_pct + 0.0015)  # entry + 0.35%
+                        trade["stop_loss"] = be_sl
                         trade["trailing_active"] = True
                         trade["trailing_high"] = current_price
                         logger.info(
-                            f"🔒 {pair}: Break-Even! SL → {trade['stop_loss']:.6f} (ربح مضمون)"
+                            f"🔒 {pair}: Break-Even! SL → {be_sl:.6f} (ربح صافي مضمون بعد العمولة)"
                         )
 
                     # ✅ Trailing Stop ذكي: إذا ربح 1%+ → يتبع السعر بمسافة 0.5%

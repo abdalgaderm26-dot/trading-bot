@@ -624,13 +624,13 @@ class StrategyEngine:
 
     # ──────────────── تعديل الحدود ────────────────
     def adjust_thresholds(self, buy_threshold=None, sell_threshold=None, min_ai=None):
-        """تعديل حدود القرار (يستخدمه المحسّن التلقائي)"""
+        """تعديل حدود القرار (يستخدمه المحسّن التلقائي) مع حدود أمان"""
         if buy_threshold:
-            self.buy_threshold = max(40, min(85, buy_threshold))
+            self.buy_threshold = max(65, min(90, buy_threshold))  # ✅ لا تنزل تحت 65
         if sell_threshold:
             self.sell_threshold = max(20, min(60, sell_threshold))
         if min_ai:
-            self.min_ai_score = max(40, min(80, min_ai))
+            self.min_ai_score = max(55, min(80, min_ai))  # ✅ لا تنزل تحت 55
         logger.info(
             f"⚙️ تم تعديل الحدود: شراء≥{self.buy_threshold} | "
             f"بيع≤{self.sell_threshold} | AI≥{self.min_ai_score}"

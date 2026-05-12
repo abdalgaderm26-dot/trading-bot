@@ -59,16 +59,16 @@ class StrategyOptimizer:
 
             if win_rate < 40:
                 # أداء ضعيف → شدّد الشروط
-                new_buy = min(current_buy + 5, 80)
-                new_ai = min(current_ai + 5, 75)
+                new_buy = min(current_buy + 5, 85)
+                new_ai = min(current_ai + 5, 78)
                 logger.info(f"📈 تشديد الشروط: شراء {current_buy}→{new_buy} | AI {current_ai}→{new_ai}")
                 self.strategy.adjust_thresholds(buy_threshold=new_buy, min_ai=new_ai)
 
             elif win_rate > 65 and total_trades < 3:
-                # أداء جيد لكن صفقات قليلة → رخّي الشروط قليلاً
-                new_buy = max(current_buy - 3, 55)
-                new_ai = max(current_ai - 3, 50)
-                logger.info(f"📉 ترخية الشروط: شراء {current_buy}→{new_buy} | AI {current_ai}→{new_ai}")
+                # أداء جيد لكن صفقات قليلة → رخّي قليلاً (لكن لا تخفض كثيراً!)
+                new_buy = max(current_buy - 2, 70)  # ✅ لا تنزل تحت 70 أبداً!
+                new_ai = max(current_ai - 2, 60)    # ✅ لا تنزل تحت 60 أبداً!
+                logger.info(f"📉 ترخية محدودة: شراء {current_buy}→{new_buy} | AI {current_ai}→{new_ai}")
                 self.strategy.adjust_thresholds(buy_threshold=new_buy, min_ai=new_ai)
 
             elif win_rate > 60:
