@@ -223,10 +223,26 @@ class BinanceClient:
             return {}
 
     def get_usdt_balance(self):
-        """جلب رصيد USDT الحر - مع تشخيص للـ IP"""
+        """جلب رصيد USDT الحر - مع محاولات متعددة"""
         try:
             balance = self.exchange.fetch_balance()
-            return float(balance.get("free", {}).get("USDT", 0))
+            # محاولة 1: free USDT
+            free = float(balance.get("free", {}).get("USDT", 0) or 0)
+            if free > 0:
+                return free
+            # محاولة 2: total USDT (قد يكون كله في أوامر مفتوحة)
+            total = float(balance.get("total", {}).get("USDT", 0) or 0)
+            if total > 0:
+                return total
+            # محاولة 3: البحث في info (بيانات خام)
+            info = balance.get("info", {})
+            if isinstance(info, dict):
+                balances = info.get("balances", [])
+                if isinstance(balances, list):
+                    for b in balances:
+                        if b.get("asset") == "USDT":
+                            return float(b.get("free", 0) or 0)
+            return 0.0
         except Exception as e:
             # استخراج الـ IP العام للتشخيص
             public_ip = "غير معروف"
