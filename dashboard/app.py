@@ -348,6 +348,66 @@ async def api_sell_asset(asset: str):
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
+@app.get("/api/cancel_all_orders")
+async def api_cancel_all_orders():
+    """إلغاء كل الأوامر المعلقة لتحرير الرصيد المحجوز"""
+    try:
+        client = bot_ref.get("client")
+        if not client:
+            return JSONResponse({"status": "error", "message": "client not connected"}, status_code=500)
+
+        cancelled = []
+        # جلب كل الأوامر المفتوحة
+        try:
+            open_orders = client.exchange.fetch_open_orders()
+        except Exception:
+            open_orders = []
+
+        if not open_orders:
+            # محاولة إلغاء من أزواج معروفة
+            from config import Config
+            for pair in Config.TRADING_PAIRS[:30]:
+                try:
+                    orders = client.exchange.fetch_open_orders(pair)
+                    for o in orders:
+                        try:
+                            client.exchange.cancel_order(o["id"], pair)
+                            cancelled.append({"pair": pair, "id": o["id"], "amount": o.get("amount")})
+                        except Exception:
+                            pass
+                except Exception:
+                    continue
+        else:
+            for o in open_orders:
+                try:
+                    sym = o.get("symbol", "")
+                    client.exchange.cancel_order(o["id"], sym)
+                    cancelled.append({"pair": sym, "id": o["id"], "amount": o.get("amount")})
+                except Exception:
+                    pass
+
+        # جلب الرصيد الجديد
+        try:
+            bal = client.fetch_balance()
+            new_free = float(bal.get("USDT", {}).get("free", 0) or 0)
+            new_total = float(bal.get("USDT", {}).get("total", 0) or 0)
+        except Exception:
+            new_free = 0
+            new_total = 0
+
+        return {
+            "status": "success",
+            "cancelled_count": len(cancelled),
+            "cancelled_orders": cancelled,
+            "usdt_free_now": new_free,
+            "usdt_total_now": new_total
+        }
+
+    except Exception as e:
+        logger.error(f"Cancel all orders error: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
 # ──────────────── WebSockets ────────────────
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
