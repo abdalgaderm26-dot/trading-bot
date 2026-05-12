@@ -23,13 +23,13 @@ class Config:
     BINANCE_SANDBOX = os.getenv("BINANCE_SANDBOX", "true").lower() == "true"
     
     # ──────────────── Futures Trading (Professional) ────────────────
-    ENABLE_FUTURES = False   # ⛔ SPOT فقط - الفيوتشرز خطر بدون خبرة كافية
-    FUTURES_LEVERAGE = 3
+    ENABLE_FUTURES = os.getenv("ENABLE_FUTURES", "false").lower() == "true"  # يقرأ من البيئة
+    FUTURES_LEVERAGE = int(os.getenv("FUTURES_LEVERAGE", "3"))
     FUTURES_MARGIN_MODE = "isolated"
     FUTURES_SERVER_SL = os.getenv("FUTURES_SERVER_SL", "true").lower() == "true"
     FUTURES_SERVER_TP = os.getenv("FUTURES_SERVER_TP", "true").lower() == "true"
-    FUTURES_MIN_SCORE = int(os.getenv("FUTURES_MIN_SCORE", "70"))  # درجة عالية جداً إذا تم تفعيل الفيوتشرز
-    AUTO_TRANSFER_SPOT_TO_FUTURES = False  # ⛔ لا تحويل تلقائي لحماية رأس المال
+    FUTURES_MIN_SCORE = int(os.getenv("FUTURES_MIN_SCORE", "70"))
+    AUTO_TRANSFER_SPOT_TO_FUTURES = os.getenv("AUTO_TRANSFER_SPOT_TO_FUTURES", "false").lower() == "true"
 
     # ──────────────── Trading Pairs (120+ عملة عالية السيولة) ────────────────
     # Blue Chips + Meme + AI + Layer1/2 + DeFi + Gaming + Infrastructure
@@ -101,39 +101,39 @@ class Config:
     MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "trade_model.pkl")
     TRAINING_DATA_SIZE = 500  # عدد الشموع للتدريب
 
-    # ──────────────── Risk Management (ULTRA SAFE - ربح مضمون فوق العمولة) ────────────────
-    # عمولة بينانس: 0.1% شراء + 0.1% بيع = 0.2% ذهاباً وإياباً
-    # لذلك أدنى ربح يجب أن يكون أعلى من 0.2% دائماً لضمان صافي ربح حقيقي
-    RISK_PER_TRADE = 0.20    # ⚡ 20% فقط من الرصيد لكل صفقة - حماية 80% من رأس المال
-    STOP_LOSS_PCT = 0.05     # ⚡ 5% احتياطي طوارئ فقط - البوت لن يبيع بخسارة أصلاً
-    TAKE_PROFIT_MIN = 0.008  # ⚡ 0.8% هدف أول (صافي بعد العمولة = 0.6%)
-    TAKE_PROFIT_MAX = 0.025  # ⚡ 2.5% سقف ربح
+    # ──────────────── Risk Management (احترافي - يحسب العمولات) ────────────────
+    # عمولة بينانس الحقيقية: 0.1% شراء + 0.1% بيع = 0.2% ذهاباً وإياباً
+    EXCHANGE_FEE_PCT = 0.002  # 0.2% عمولة كاملة (شراء + بيع) - تُخصم من كل حساب ربح
+    RISK_PER_TRADE = 0.15    # 15% من الرصيد لكل صفقة - حماية 85% من رأس المال
+    STOP_LOSS_PCT = 0.02     # ✅ وقف خسارة حقيقي عند -2% - يبيع فعلاً!
+    TAKE_PROFIT_MIN = 0.010  # 1.0% هدف أول (صافي بعد العمولة = 0.8%)
+    TAKE_PROFIT_MAX = 0.030  # 3.0% سقف ربح
     CLOSE_ON_MIN_PROFIT = os.getenv("CLOSE_ON_MIN_PROFIT", "true").lower() == "true"
-    MIN_PROFIT_CLOSE_PCT = float(os.getenv("MIN_PROFIT_CLOSE_PCT", "0.004"))  # ⚡ 0.4% أدنى ربح = 0.2% صافي بعد العمولة (مضمون)
-    # مراقبة السيولة العالية فقط
-    PUMP_FOCUS_MODE = True  # تفعيل الهجوم السريع والتمركز (Sniper Pump) بشكل صارم جداً
-    PUMP_MIN_3C_PCT = float(os.getenv("PUMP_MIN_3C_PCT", "0.008"))  # +0.8% كافية على إطار الخمس دقائق
-    PUMP_MIN_5C_PCT = float(os.getenv("PUMP_MIN_5C_PCT", "0.012"))   # +1.2% خلال 5 شموع
+    MIN_PROFIT_CLOSE_PCT = float(os.getenv("MIN_PROFIT_CLOSE_PCT", "0.006"))  # ✅ 0.6% أدنى ربح = 0.4% صافي بعد العمولة
+    # وضع القنص: يبحث عن عملات بداية صعود (وليس بعد الصعود)
+    PUMP_FOCUS_MODE = os.getenv("PUMP_FOCUS_MODE", "false").lower() == "true"  # ✅ معطل افتراضياً - كان يسبب الشراء في القمم
+    PUMP_MIN_3C_PCT = float(os.getenv("PUMP_MIN_3C_PCT", "0.008"))
+    PUMP_MIN_5C_PCT = float(os.getenv("PUMP_MIN_5C_PCT", "0.012"))
     PUMP_VOLUME_RATIO_MIN = float(os.getenv("PUMP_VOLUME_RATIO_MIN", "1.5"))
-    STEADY_UP_MIN_5C_PCT = float(os.getenv("STEADY_UP_MIN_5C_PCT", "0.006"))  # +0.6%
+    STEADY_UP_MIN_5C_PCT = float(os.getenv("STEADY_UP_MIN_5C_PCT", "0.006"))
     STEADY_UP_MIN_GREEN_CANDLES = int(os.getenv("STEADY_UP_MIN_GREEN_CANDLES", "3"))
-    PUMP_SCORE_BONUS = int(os.getenv("PUMP_SCORE_BONUS", "35"))       # رفع المكافأة جداً للدخول في الارتفاع المؤكد
-    STEADY_SCORE_BONUS = int(os.getenv("STEADY_SCORE_BONUS", "25"))
-    PUMP_QUICK_EXIT_PCT = float(os.getenv("PUMP_QUICK_EXIT_PCT", "0.003")) # 0.3% للربح السريع
-    # إغلاق الصفقة الخاسرة فوراً عند الوصول لوقف الخسارة العادي لتجنب التعلق.
-    EXIT_LOSS_ONLY_ON_HIGH_RISK = os.getenv("EXIT_LOSS_ONLY_ON_HIGH_RISK", "false").lower() == "true"
-    HIGH_RISK_LOSS_PCT = float(os.getenv("HIGH_RISK_LOSS_PCT", "0.015"))  # 1.5% هبوط كحد أقصى للتدخل الطارئ
-    # بعد إغلاق الصفقة: تحويل عائد العملات غير USDT تلقائيًا إلى USDT.
+    PUMP_SCORE_BONUS = int(os.getenv("PUMP_SCORE_BONUS", "15"))   # ✅ خُفضت من 35 لتجنب الشراء في القمم
+    STEADY_SCORE_BONUS = int(os.getenv("STEADY_SCORE_BONUS", "12"))
+    PUMP_QUICK_EXIT_PCT = float(os.getenv("PUMP_QUICK_EXIT_PCT", "0.006"))  # ✅ 0.6% بدل 0.3% لتغطية العمولة
+    # وقف الخسارة الحقيقي: يبيع فوراً عند الوصول للحد
+    EXIT_LOSS_ONLY_ON_HIGH_RISK = False  # ✅ معطل - وقف الخسارة يعمل دائماً
+    HIGH_RISK_LOSS_PCT = float(os.getenv("HIGH_RISK_LOSS_PCT", "0.02"))  # 2% حد أقصى للخسارة
+    # تحويل تلقائي للعملات إلى USDT بعد الإغلاق
     AUTO_CONVERT_PROCEEDS_TO_USDT = os.getenv("AUTO_CONVERT_PROCEEDS_TO_USDT", "true").lower() == "true"
     AUTO_CONVERT_MIN_USDT_VALUE = float(os.getenv("AUTO_CONVERT_MIN_USDT_VALUE", "5.0"))
     AUTO_CONVERT_BUFFER_RATIO = float(os.getenv("AUTO_CONVERT_BUFFER_RATIO", "0.995"))
-    DAILY_LOSS_LIMIT = 0.02  # ⚡ إذا خسر 2% - يتوقف فوراً
-    MAX_OPEN_TRADES = 1      # ⚡ صفقة واحدة فقط
-    ORDER_COOLDOWN = 300     # ⚡ 5 دقائق انتظار بين الصفقات لقراءة السوق جيداً
-    MAX_CAPITAL_PER_TRADE = float(os.getenv("MAX_CAPITAL_PER_TRADE", "0.20"))  # ⚡ أقصى 20% من الرصيد
-    MIN_TRADE_NOTIONAL = 5.0      # أقل قيمة صفقة لتفادي رفض NOTIONAL
-    BALANCE_CACHE_TTL = 8         # كاش للرصيد بالثواني
-    ORDER_BOOK_CACHE_SECONDS = 20  # كاش تحليل دفتر الأوامر
+    DAILY_LOSS_LIMIT = 0.03  # إذا خسر 3% - يتوقف فوراً
+    MAX_OPEN_TRADES = 3      # ✅ 3 صفقات لتنويع المخاطر بدل صفقة واحدة
+    ORDER_COOLDOWN = 120     # ✅ دقيقتين بين الصفقات (بدل 5 دقائق)
+    MAX_CAPITAL_PER_TRADE = float(os.getenv("MAX_CAPITAL_PER_TRADE", "0.15"))  # ✅ أقصى 15% من الرصيد لكل صفقة
+    MIN_TRADE_NOTIONAL = 5.0
+    BALANCE_CACHE_TTL = 8
+    ORDER_BOOK_CACHE_SECONDS = 20
 
     # Spot inventory trading:
     # allows SELL signal to use existing base-asset balance (e.g. sell LTC in LTC/USDT)

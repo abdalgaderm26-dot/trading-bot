@@ -308,7 +308,7 @@ class StrategyEngine:
 
             # ═══ فلتر 3: لا تشتري في قمة RSI (خطأ المبتدئين) ═══
             rsi = analysis.get("rsi", 50)
-            if rsi > 72:
+            if rsi > 68:
                 logger.info(f"⏸️ {pair}: RSI مرتفع جداً ({rsi:.0f}) - خطر الشراء في القمة")
                 return self._hold_signal(pair, f"RSI مرتفع {rsi:.0f} - انتظار تراجع")
 
@@ -396,13 +396,12 @@ class StrategyEngine:
         """
         عد عدد المؤشرات المتوافقة (Confluence Count).
         المتداول المحترف يحتاج 3+ مؤشرات متفقة قبل الدخول.
-        هذا يمنع الدخول بناءً على مؤشر واحد قوي فقط (مثل RSI فقط).
         """
         count = 0
 
-        # 1. RSI في منطقة شراء (< 45)
+        # 1. RSI في منطقة تشبع بيعي حقيقي (< 40 بدل 45)
         rsi = analysis.get("rsi", 50)
-        if rsi < 45:
+        if rsi < 40:
             count += 1
 
         # 2. الاتجاه صعودي
@@ -410,18 +409,20 @@ class StrategyEngine:
         if trend.get("direction") == "BULLISH":
             count += 1
 
-        # 3. MACD إيجابي أو تقاطع صعودي
+        # 3. MACD تقاطع صعودي (التقاطع أقوى من مجرد إيجابي)
         macd = analysis.get("macd_cross", {}).get("signal", "NEUTRAL")
-        if macd in ("BULLISH_CROSS", "BULLISH"):
+        if macd == "BULLISH_CROSS":
             count += 1
+        elif macd == "BULLISH":
+            count += 0.5
 
-        # 4. حجم مرتفع أو متزايد
+        # 4. حجم مرتفع (ليس فقط متزايد)
         vol = analysis.get("volume_analysis", {})
-        if vol.get("is_high") or vol.get("is_increasing"):
+        if vol.get("is_high"):
             count += 1
 
-        # 5. AI يدعم الشراء (> 55)
-        if ai_score > 55:
+        # 5. AI يدعم الشراء (> 60 بدل 55)
+        if ai_score > 60:
             count += 1
 
         # 6. السعر قرب دعم أو تحت بولينجر
@@ -429,7 +430,7 @@ class StrategyEngine:
         if pos.get("near_support") or pos.get("below_bb"):
             count += 1
 
-        # 7. زخم صعودي (pump أو steady)
+        # 7. زخم صعودي
         if pump_ctx.get("is_pump") or pump_ctx.get("is_steady"):
             count += 1
 
@@ -438,7 +439,7 @@ class StrategyEngine:
         if candle.get("direction") == "BULLISH":
             count += 1
 
-        return count
+        return int(count)
 
     def _detect_pump_context(self, analysis):
         """

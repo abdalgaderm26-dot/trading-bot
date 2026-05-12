@@ -433,8 +433,8 @@ class TradingBot:
         # عرض عنوان IP الخاص بالجهاز
         self._show_ip_address()
 
-        # Close any open trades before moving funds
-        self.execution.close_all_trades("USER_STOP")
+        # ✅ لا نغلق الصفقات عند إعادة التشغيل - نستعيدها بدلاً من ذلك
+        # (كان هنا close_all_trades الذي يغلق الصفقات عند كل Deploy)
 
         # Optional funding wallet sync before scanning pairs.
         self._sync_funding_wallet_to_spot()

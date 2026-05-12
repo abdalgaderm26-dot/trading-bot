@@ -766,14 +766,15 @@ class ExecutionEngine:
                 pos_side = trade.get("position_side", "LONG")
 
                 if pos_side == "LONG":
-                    # ⚡ لا نبيع بخسارة أبداً - ننتظر حتى يرتفع السعر
                     pnl_ratio = self._pnl_ratio(trade, current_price)
-                    if pnl_ratio < 0:
-                        # فقط تحذير - لا بيع
-                        if pnl_ratio < -0.03:  # تحذير شديد عند -3%
-                            logger.warning(
-                                f"⚠️ {pair}: خسارة كبيرة ({pnl_ratio:.2%}) - ننتظر الارتداد"
-                            )
+
+                    # ✅ وقف خسارة حقيقي - يبيع فعلاً عند الخسارة
+                    if current_price <= float(trade["stop_loss"]):
+                        logger.warning(
+                            f"⛔ {pair}: وقف خسارة! السعر {current_price:.6f} <= SL {float(trade['stop_loss']):.6f} | "
+                            f"خسارة {pnl_ratio:.2%} - إغلاق فوري لحماية رأس المال!"
+                        )
+                        pairs_to_close.append((pair, trade, "STOP_LOSS"))
                         continue
 
                     if self._reached_min_profit(trade, current_price):
@@ -812,13 +813,15 @@ class ExecutionEngine:
                         pairs_to_close.append((pair, trade, "TAKE_PROFIT_FULL"))
 
                 else:  # SHORT
-                    # ⚡ لا نبيع بخسارة أبداً - ننتظر حتى ينخفض السعر
                     pnl_ratio = self._pnl_ratio(trade, current_price)
-                    if pnl_ratio < 0:
-                        if pnl_ratio < -0.03:
-                            logger.warning(
-                                f"⚠️ {pair} (SHORT): خسارة كبيرة ({pnl_ratio:.2%}) - ننتظر الارتداد"
-                            )
+
+                    # ✅ وقف خسارة حقيقي للشورت
+                    if current_price >= float(trade["stop_loss"]):
+                        logger.warning(
+                            f"⛔ {pair} (SHORT): وقف خسارة! السعر {current_price:.6f} >= SL {float(trade['stop_loss']):.6f} | "
+                            f"خسارة {pnl_ratio:.2%}"
+                        )
+                        pairs_to_close.append((pair, trade, "STOP_LOSS"))
                         continue
 
                     if self._reached_min_profit(trade, current_price):
@@ -996,11 +999,17 @@ class ExecutionEngine:
             base_amount = closed_amount
 
             if pos_side == "LONG":
-                pnl = (exit_price - entry_price) * base_amount
-                pnl_pct = (exit_price - entry_price) / entry_price * 100
+                raw_pnl = (exit_price - entry_price) * base_amount
+                raw_pnl_pct = (exit_price - entry_price) / entry_price * 100
             else:
-                pnl = (entry_price - exit_price) * base_amount
-                pnl_pct = (entry_price - exit_price) / entry_price * 100
+                raw_pnl = (entry_price - exit_price) * base_amount
+                raw_pnl_pct = (entry_price - exit_price) / entry_price * 100
+
+            # ✅ خصم عمولة بينانس من الربح الحقيقي
+            fee_pct = getattr(Config, "EXCHANGE_FEE_PCT", 0.002)
+            fee_amount = entry_price * base_amount * fee_pct  # عمولة شراء + بيع
+            pnl = raw_pnl - fee_amount
+            pnl_pct = raw_pnl_pct - (fee_pct * 100)
 
             remaining_after = max(0.0, remaining - closed_amount)
             if remaining_after > 0:

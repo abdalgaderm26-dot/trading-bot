@@ -130,9 +130,9 @@ class AIModel:
 
                 if predictions:
                     final_score = weighted_score
-                    # الدمج مع التحليل القواعدي (30% rules + 70% ML)
+                    # الدمج مع التحليل القواعدي (50% rules + 50% ML) - ML غير موثوق ببيانات قليلة
                     rule_score = self._rule_based_score(analysis)["score"]
-                    combined = final_score * 0.7 + rule_score * 0.3
+                    combined = final_score * 0.5 + rule_score * 0.5
 
                     return {
                         "score": round(min(max(combined, 0), 100), 1),
@@ -280,7 +280,7 @@ class AIModel:
                 # Label: 1 = سعر ارتفع بعد 5 شموع، 0 = لا
                 future_price = df.iloc[i+5]["close"]
                 current_price = close[-1]
-                label = 1 if future_price > current_price * 1.005 else 0
+                label = 1 if future_price > current_price * 1.01 else 0  # ✅ 1% بدل 0.5% لتنبؤ أقوى
                 labels.append(label)
 
             return np.array(features_list), np.array(labels)
