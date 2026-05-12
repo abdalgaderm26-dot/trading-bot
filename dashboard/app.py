@@ -107,14 +107,53 @@ async def api_balance():
     """الرصيد"""
     client = bot_ref.get("client")
     if not client:
-        return {"balance": {}, "usdt": 0}
+        return {"balance": {}, "usdt": 0, "error": "client not connected"}
 
     try:
         balance = client.fetch_balance()
         usdt = client.get_usdt_balance()
         return {"balance": balance, "usdt": usdt}
     except Exception as e:
+        logger.error(f"❌ api_balance error: {e}")
         return {"error": str(e), "balance": {}, "usdt": 0}
+
+
+@app.get("/api/diag")
+async def api_diag():
+    """تشخيص - يكشف سبب عدم ظهور الرصيد"""
+    import urllib.request
+    result = {
+        "enable_futures": getattr(Config, "ENABLE_FUTURES", "UNKNOWN"),
+        "sandbox": getattr(Config, "BINANCE_SANDBOX", "UNKNOWN"),
+        "api_key_set": bool(getattr(Config, "BINANCE_API_KEY", "")),
+        "api_key_prefix": getattr(Config, "BINANCE_API_KEY", "")[:8] + "..." if getattr(Config, "BINANCE_API_KEY", "") else "EMPTY",
+    }
+
+    # IP العام
+    try:
+        result["public_ip"] = urllib.request.urlopen("https://api.ipify.org", timeout=5).read().decode("utf-8")
+    except:
+        result["public_ip"] = "failed to get"
+
+    # محاولة جلب الرصيد
+    client = bot_ref.get("client")
+    if client:
+        result["client_connected"] = True
+        try:
+            balance = client.exchange.fetch_balance()
+            usdt_free = float(balance.get("free", {}).get("USDT", 0) or 0)
+            usdt_total = float(balance.get("total", {}).get("USDT", 0) or 0)
+            result["usdt_free"] = usdt_free
+            result["usdt_total"] = usdt_total
+            result["balance_keys"] = list(balance.get("total", {}).keys())[:10]
+            result["fetch_success"] = True
+        except Exception as e:
+            result["fetch_success"] = False
+            result["fetch_error"] = str(e)
+    else:
+        result["client_connected"] = False
+
+    return result
 
 
 @app.get("/api/trades/open")
