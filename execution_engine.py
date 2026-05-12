@@ -317,16 +317,17 @@ class ExecutionEngine:
     def _reached_min_profit(self, trade: dict, current_price: float) -> bool:
         """Check fast-exit mode: close the whole trade at minimal profit.
         ✅ يخصم العمولة قبل المقارنة لتجنب البيع بربح وهمي.
+        ✅ لا يسمح أبداً بالبيع تحت MIN_PROFIT_CLOSE_PCT حتى لو quick_exit أقل.
         """
         if not getattr(Config, "CLOSE_ON_MIN_PROFIT", False):
             return False
 
-        # Allow per-trade override for fast pump opportunities.
-        min_profit_pct = float(
-            trade.get("quick_exit_pct")
-            or getattr(Config, "MIN_PROFIT_CLOSE_PCT", 0.0)
-            or 0.0
-        )
+        # الحد الأدنى المطلق = MIN_PROFIT_CLOSE_PCT (لا يمكن تجاوزه)
+        absolute_floor = float(getattr(Config, "MIN_PROFIT_CLOSE_PCT", 0.008) or 0.008)
+
+        # Allow per-trade override for fast pump opportunities (but never below floor!)
+        quick_exit = float(trade.get("quick_exit_pct") or 0.0)
+        min_profit_pct = max(quick_exit, absolute_floor) if quick_exit > 0 else absolute_floor
         if min_profit_pct <= 0:
             return False
 

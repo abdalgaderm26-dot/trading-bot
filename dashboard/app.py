@@ -156,6 +156,30 @@ async def api_diag():
     return result
 
 
+@app.get("/api/config_audit")
+async def api_config_audit():
+    """فحص القيم الثابتة - للتأكد أن Railway لا يتجاوزها"""
+    return {
+        "ENABLE_FUTURES": getattr(Config, "ENABLE_FUTURES", "?"),
+        "MAX_CAPITAL_PER_TRADE": getattr(Config, "MAX_CAPITAL_PER_TRADE", "?"),
+        "MIN_PROFIT_CLOSE_PCT": getattr(Config, "MIN_PROFIT_CLOSE_PCT", "?"),
+        "PUMP_QUICK_EXIT_PCT": getattr(Config, "PUMP_QUICK_EXIT_PCT", "?"),
+        "STOP_LOSS_PCT": getattr(Config, "STOP_LOSS_PCT", "?"),
+        "PUMP_FOCUS_MODE": getattr(Config, "PUMP_FOCUS_MODE", "?"),
+        "PUMP_SCORE_BONUS": getattr(Config, "PUMP_SCORE_BONUS", "?"),
+        "STEADY_SCORE_BONUS": getattr(Config, "STEADY_SCORE_BONUS", "?"),
+        "SPOT_INVENTORY_SELL_ENABLED": getattr(Config, "SPOT_INVENTORY_SELL_ENABLED", "?"),
+        "EXIT_LOSS_ONLY_ON_HIGH_RISK": getattr(Config, "EXIT_LOSS_ONLY_ON_HIGH_RISK", "?"),
+        "EXCHANGE_FEE_PCT": getattr(Config, "EXCHANGE_FEE_PCT", "?"),
+        "ORDER_COOLDOWN": getattr(Config, "ORDER_COOLDOWN", "?"),
+        "MAX_OPEN_TRADES": getattr(Config, "MAX_OPEN_TRADES", "?"),
+        "DAILY_LOSS_LIMIT": getattr(Config, "DAILY_LOSS_LIMIT", "?"),
+        "RISK_PER_TRADE": getattr(Config, "RISK_PER_TRADE", "?"),
+        "CLOSE_ON_MIN_PROFIT": getattr(Config, "CLOSE_ON_MIN_PROFIT", "?"),
+        "status": "ALL_HARDCODED ✅"
+    }
+
+
 @app.get("/api/trades/open")
 async def api_open_trades():
     """الصفقات المفتوحة"""

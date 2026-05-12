@@ -117,17 +117,17 @@ class Config:
     MIN_PROFIT_CLOSE_PCT = 0.008  # ✅ 0.8% = ربح صافي 0.6% بعد العمولة (لا يقرأ من env!)
     # وضع القنص: يبحث عن عملات بداية صعود (وليس بعد الصعود)
     PUMP_FOCUS_MODE = False  # ✅ ثابت - معطل للأمان
-    PUMP_MIN_3C_PCT = float(os.getenv("PUMP_MIN_3C_PCT", "0.008"))
-    PUMP_MIN_5C_PCT = float(os.getenv("PUMP_MIN_5C_PCT", "0.012"))
-    PUMP_VOLUME_RATIO_MIN = float(os.getenv("PUMP_VOLUME_RATIO_MIN", "1.5"))
-    STEADY_UP_MIN_5C_PCT = float(os.getenv("STEADY_UP_MIN_5C_PCT", "0.006"))
-    STEADY_UP_MIN_GREEN_CANDLES = int(os.getenv("STEADY_UP_MIN_GREEN_CANDLES", "3"))
-    PUMP_SCORE_BONUS = int(os.getenv("PUMP_SCORE_BONUS", "15"))   # ✅ خُفضت من 35 لتجنب الشراء في القمم
-    STEADY_SCORE_BONUS = int(os.getenv("STEADY_SCORE_BONUS", "12"))
-    PUMP_QUICK_EXIT_PCT = float(os.getenv("PUMP_QUICK_EXIT_PCT", "0.006"))  # ✅ 0.6% بدل 0.3% لتغطية العمولة
+    PUMP_MIN_3C_PCT = 0.008
+    PUMP_MIN_5C_PCT = 0.012
+    PUMP_VOLUME_RATIO_MIN = 1.5
+    STEADY_UP_MIN_5C_PCT = 0.006
+    STEADY_UP_MIN_GREEN_CANDLES = 3
+    PUMP_SCORE_BONUS = 12   # ✅ ثابت 12 - لا يقرأ من env (كان 35 على Railway!)
+    STEADY_SCORE_BONUS = 10  # ✅ ثابت 10
+    PUMP_QUICK_EXIT_PCT = 0.008  # ✅ ثابت 0.8% - نفس MIN_PROFIT! (كان 0.3% على Railway = خسارة!)
     # وقف الخسارة الحقيقي: يبيع فوراً عند الوصول للحد
     EXIT_LOSS_ONLY_ON_HIGH_RISK = False  # ✅ معطل - وقف الخسارة يعمل دائماً
-    HIGH_RISK_LOSS_PCT = float(os.getenv("HIGH_RISK_LOSS_PCT", "0.02"))  # 2% حد أقصى للخسارة
+    HIGH_RISK_LOSS_PCT = 0.02  # ✅ ثابت 2%
     # تحويل تلقائي للعملات إلى USDT بعد الإغلاق
     AUTO_CONVERT_PROCEEDS_TO_USDT = os.getenv("AUTO_CONVERT_PROCEEDS_TO_USDT", "true").lower() == "true"
     AUTO_CONVERT_MIN_USDT_VALUE = float(os.getenv("AUTO_CONVERT_MIN_USDT_VALUE", "5.0"))
