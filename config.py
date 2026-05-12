@@ -113,8 +113,8 @@ class Config:
     STOP_LOSS_PCT = 0.02     # ✅ وقف خسارة حقيقي عند -2% - يبيع فعلاً!
     TAKE_PROFIT_MIN = 0.010  # 1.0% هدف أول (صافي بعد العمولة = 0.8%)
     TAKE_PROFIT_MAX = 0.030  # 3.0% سقف ربح
-    CLOSE_ON_MIN_PROFIT = os.getenv("CLOSE_ON_MIN_PROFIT", "true").lower() == "true"
-    MIN_PROFIT_CLOSE_PCT = float(os.getenv("MIN_PROFIT_CLOSE_PCT", "0.006"))  # ✅ 0.6% أدنى ربح = 0.4% صافي بعد العمولة
+    CLOSE_ON_MIN_PROFIT = True  # ✅ ثابت - لا يقرأ من البيئة
+    MIN_PROFIT_CLOSE_PCT = 0.008  # ✅ 0.8% = ربح صافي 0.6% بعد العمولة (لا يقرأ من env!)
     # وضع القنص: يبحث عن عملات بداية صعود (وليس بعد الصعود)
     PUMP_FOCUS_MODE = os.getenv("PUMP_FOCUS_MODE", "false").lower() == "true"  # ✅ معطل افتراضياً - كان يسبب الشراء في القمم
     PUMP_MIN_3C_PCT = float(os.getenv("PUMP_MIN_3C_PCT", "0.008"))
@@ -142,8 +142,8 @@ class Config:
 
     # Spot inventory trading:
     # allows SELL signal to use existing base-asset balance (e.g. sell LTC in LTC/USDT)
-    SPOT_INVENTORY_SELL_ENABLED = os.getenv("SPOT_INVENTORY_SELL_ENABLED", "true").lower() == "true"
-    SPOT_INVENTORY_SELL_RATIO = float(os.getenv("SPOT_INVENTORY_SELL_RATIO", "0.35"))
+    SPOT_INVENTORY_SELL_ENABLED = False  # ✅ معطل - لا نريد بيع في Spot Mode
+    SPOT_INVENTORY_SELL_RATIO = 0.35
 
     # Optional wallet sync: move quote assets from Funding wallet to Spot wallet.
     AUTO_TRANSFER_FUNDING_TO_SPOT = os.getenv("AUTO_TRANSFER_FUNDING_TO_SPOT", "false").lower() == "true"

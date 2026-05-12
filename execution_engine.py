@@ -431,6 +431,15 @@ class ExecutionEngine:
             if pair in self.open_trades:
                 trade = self.open_trades[pair]
                 if trade.get("position_side", "LONG") == "LONG":
+                    # ✅ في وضع Spot: لا تغلق LONG بسبب إشارة بيع!
+                    # فقط وقف الخسارة / الربح / Trailing يغلقون الصفقة
+                    if not getattr(Config, "ENABLE_FUTURES", False):
+                        logger.info(
+                            f"⏸️ {pair}: تجاهل إشارة SELL - Spot Mode لا يغلق LONG بإشارة بيع | "
+                            f"فقط SL/TP/Trailing يغلقون"
+                        )
+                        return {"success": False, "reason": "Spot mode: SELL signal ignored for LONG trade"}
+                    # في Futures فقط: يمكن إغلاق LONG بإشارة بيع
                     current_price = float(signal.get("price") or 0.0)
                     if current_price <= 0:
                         ticker = self.client.fetch_ticker(pair)
