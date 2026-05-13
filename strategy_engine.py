@@ -314,11 +314,11 @@ class StrategyEngine:
             # ═══ فلتر 2: التقاطع (Confluence) - قاعدة المحترف ═══
             # المتداول المحترف لا يدخل إلا عندما تتفق 3+ مؤشرات مختلفة
             confluence = self._count_confluence(analysis, ai_score, pump_ctx)
-            if confluence < 3:
+            if confluence < 2:
                 logger.info(
-                    f"⏸️ {pair}: فلتر الاحتراف - تقاطع ضعيف ({confluence}/3 مؤشرات فقط)"
+                    f"⏸️ {pair}: فلتر الاحتراف - تقاطع ضعيف ({confluence}/2 مؤشرات فقط)"
                 )
-                return self._hold_signal(pair, f"تقاطع ضعيف ({confluence}/3)")
+                return self._hold_signal(pair, f"تقاطع ضعيف ({confluence}/2)")
 
             # ═══ فلتر 3: لا تشتري في قمة RSI (خطأ المبتدئين) ═══
             rsi = analysis.get("rsi", 50)
@@ -435,9 +435,9 @@ class StrategyEngine:
         """
         count = 0
 
-        # 1. RSI في منطقة تشبع بيعي حقيقي (< 40 بدل 45)
+        # 1. RSI في منطقة شراء جيدة (< 50 = ليس في تشبع شرائي)
         rsi = analysis.get("rsi", 50)
-        if rsi < 40:
+        if rsi < 50:
             count += 1
 
         # 2. الاتجاه صعودي
@@ -445,12 +445,10 @@ class StrategyEngine:
         if trend.get("direction") == "BULLISH":
             count += 1
 
-        # 3. MACD تقاطع صعودي (التقاطع أقوى من مجرد إيجابي)
+        # 3. MACD إيجابي أو تقاطع صعودي
         macd = analysis.get("macd_cross", {}).get("signal", "NEUTRAL")
-        if macd == "BULLISH_CROSS":
+        if macd in ("BULLISH_CROSS", "BULLISH"):
             count += 1
-        elif macd == "BULLISH":
-            count += 0.5
 
         # 4. حجم مرتفع (ليس فقط متزايد)
         vol = analysis.get("volume_analysis", {})
