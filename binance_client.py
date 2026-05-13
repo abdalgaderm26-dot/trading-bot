@@ -223,25 +223,36 @@ class BinanceClient:
             return {}
 
     def get_usdt_balance(self):
-        """جلب رصيد USDT الحر - مع محاولات متعددة"""
+        """جلب رصيد USDT الحر - مع محاولات متعددة وتضمين أرباح Simple Earn (LDUSDT)"""
         try:
             balance = self.exchange.fetch_balance()
-            # محاولة 1: free USDT
-            free = float(balance.get("free", {}).get("USDT", 0) or 0)
-            if free > 0:
-                return free
+            
+            # محاولة 1: free USDT + free LDUSDT (Binance Earn)
+            usdt_free = float(balance.get("free", {}).get("USDT", 0) or 0)
+            ldusdt_free = float(balance.get("free", {}).get("LDUSDT", 0) or 0)
+            total_free = usdt_free + ldusdt_free
+            
+            if total_free > 0:
+                return total_free
+                
             # محاولة 2: total USDT (قد يكون كله في أوامر مفتوحة)
-            total = float(balance.get("total", {}).get("USDT", 0) or 0)
-            if total > 0:
-                return total
+            usdt_tot = float(balance.get("total", {}).get("USDT", 0) or 0)
+            ldusdt_tot = float(balance.get("total", {}).get("LDUSDT", 0) or 0)
+            total_tot = usdt_tot + ldusdt_tot
+            
+            if total_tot > 0:
+                return total_tot
+                
             # محاولة 3: البحث في info (بيانات خام)
             info = balance.get("info", {})
             if isinstance(info, dict):
                 balances = info.get("balances", [])
                 if isinstance(balances, list):
                     for b in balances:
-                        if b.get("asset") == "USDT":
-                            return float(b.get("free", 0) or 0)
+                        if b.get("asset") in ["USDT", "LDUSDT"]:
+                            total_free += float(b.get("free", 0) or 0)
+                    if total_free > 0:
+                        return total_free
             return 0.0
         except Exception as e:
             # استخراج الـ IP العام للتشخيص

@@ -143,8 +143,11 @@ async def api_diag():
             balance = client.exchange.fetch_balance()
             usdt_free = float(balance.get("free", {}).get("USDT", 0) or 0)
             usdt_total = float(balance.get("total", {}).get("USDT", 0) or 0)
-            result["usdt_free"] = usdt_free
-            result["usdt_total"] = usdt_total
+            ldusdt_free = float(balance.get("free", {}).get("LDUSDT", 0) or 0)
+            ldusdt_total = float(balance.get("total", {}).get("LDUSDT", 0) or 0)
+            
+            result["usdt_free"] = usdt_free + ldusdt_free
+            result["usdt_total"] = usdt_total + ldusdt_total
             result["balance_keys"] = list(balance.get("total", {}).keys())[:10]
             result["fetch_success"] = True
         except Exception as e:
