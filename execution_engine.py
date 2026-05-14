@@ -795,10 +795,16 @@ class ExecutionEngine:
                         pairs_to_close.append((pair, trade, "STOP_LOSS"))
                         continue
 
-                    if self._reached_min_profit(trade, current_price):
-                        logger.info(f"{pair}: fast exit at minimal profit ({current_price:.6f})")
-                        pairs_to_close.append((pair, trade, "MIN_PROFIT"))
-                        continue
+                    # ✅ MIN_PROFIT: فقط إذا لم يفعّل Trailing بعد
+                    # إذا Trailing مفعّل = السعر ارتفع بما يكفي → نترك TP و Trailing يأخذوا مجراهم
+                    if not trade["trailing_active"] and self._reached_min_profit(trade, current_price):
+                        # ✅ تحقق: هل السعر لا يزال يصعد؟ إذا نعم → انتظر
+                        # نمنح فرصة 1.5% إضافية قبل البيع السريع
+                        raw_pnl = (current_price - entry_price) / entry_price if entry_price > 0 else 0
+                        if raw_pnl < 0.015:  # أقل من 1.5% → بيع سريع آمن
+                            logger.info(f"{pair}: fast exit at minimal profit ({current_price:.6f} | pnl={raw_pnl:.2%})")
+                            pairs_to_close.append((pair, trade, "MIN_PROFIT"))
+                            continue
 
                     if (not trade["trailing_active"]) and current_price >= float(trade["break_even_level"]):
                         # ✅ Break-Even: نقل SL لنقطة الدخول + عمولة + هامش أمان
