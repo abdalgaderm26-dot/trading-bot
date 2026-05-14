@@ -795,6 +795,65 @@ class ExecutionEngine:
                         pairs_to_close.append((pair, trade, "STOP_LOSS"))
                         continue
 
+                    # ═══ خروج ذكي: قراءة السوق عند الخسارة لتقليل الضرر ═══
+                    if pnl_ratio < -0.005:  # خسارة > 0.5%
+                        should_smart_exit = False
+                        smart_reason = ""
+                        try:
+                            # جلب بيانات لتحليل الاتجاه
+                            ws = getattr(self, 'ws_manager', None) or self.client
+                            ohlcv = None
+                            if hasattr(ws, 'fetch_ohlcv'):
+                                ohlcv = ws.fetch_ohlcv(pair, limit=20)
+                            
+                            if ohlcv and len(ohlcv) >= 10:
+                                closes = [float(c[4]) for c in ohlcv[-10:] if len(c) >= 5]
+                                
+                                # 1. هل آخر 3 شموع كلها هابطة؟ (سقوط مستمر)
+                                if len(closes) >= 4:
+                                    falling = closes[-1] < closes[-2] < closes[-3]
+                                    if falling and pnl_ratio < -0.008:
+                                        should_smart_exit = True
+                                        smart_reason = f"3 شموع هابطة متتالية + خسارة {pnl_ratio:.2%}"
+                                
+                                # 2. RSI سريع (6 فترات) - هل السوق في بيع كثيف؟
+                                if len(closes) >= 7:
+                                    gains = [max(0, closes[i] - closes[i-1]) for i in range(1, len(closes))]
+                                    losses = [max(0, closes[i-1] - closes[i]) for i in range(1, len(closes))]
+                                    avg_gain = sum(gains[-6:]) / 6 if gains else 0.001
+                                    avg_loss = sum(losses[-6:]) / 6 if losses else 0.001
+                                    rs = avg_gain / avg_loss if avg_loss > 0 else 100
+                                    rsi_fast = 100 - (100 / (1 + rs))
+                                    
+                                    if rsi_fast < 25 and pnl_ratio < -0.008:
+                                        should_smart_exit = True
+                                        smart_reason = f"RSI={rsi_fast:.0f} (بيع كثيف) + خسارة {pnl_ratio:.2%}"
+                                
+                                # 3. السعر انخفض بشكل حاد (> 1.5% من أعلى نقطة في آخر 10 شموع)
+                                if len(closes) >= 5:
+                                    recent_high = max(closes[-5:])
+                                    drop_from_high = (recent_high - current_price) / recent_high
+                                    if drop_from_high > 0.015 and pnl_ratio < -0.01:
+                                        should_smart_exit = True
+                                        smart_reason = f"انخفاض حاد {drop_from_high:.2%} من القمة + خسارة {pnl_ratio:.2%}"
+                            
+                            # 4. الصفقة عمرها أكثر من 45 دقيقة وخاسرة > 1%
+                            trade_age = time.time() - float(trade.get("time", time.time()))
+                            if trade_age > 2700 and pnl_ratio < -0.01:  # 45 دقيقة
+                                should_smart_exit = True
+                                smart_reason = f"صفقة قديمة ({trade_age/60:.0f} دقيقة) + خسارة {pnl_ratio:.2%}"
+                                
+                        except Exception as e:
+                            logger.debug(f"Smart exit check error for {pair}: {e}")
+                        
+                        if should_smart_exit:
+                            logger.warning(
+                                f"🧠 {pair}: خروج ذكي مبكر! {smart_reason} | "
+                                f"بدلاً من انتظار SL الكامل (-2%)"
+                            )
+                            pairs_to_close.append((pair, trade, "STOP_LOSS"))
+                            continue
+
                     # ✅ MIN_PROFIT: فقط إذا لم يفعّل Trailing بعد
                     # إذا Trailing مفعّل = السعر ارتفع بما يكفي → نترك TP و Trailing يأخذوا مجراهم
                     if not trade["trailing_active"] and self._reached_min_profit(trade, current_price):
